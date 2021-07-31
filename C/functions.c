@@ -247,24 +247,20 @@ void quickSort(double *sli_id, double *arr, int low, int high){
 	}
 }
 
-void logmkernel(FILE* test, struct svm_node **nod, const double* array1, const double* array2, double* result, int m, int n, int p) {
+void logmkernel(FILE* test, struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
 	int i, j, k;
 	double sum=0;
-	//memset(result, 0, m*p*sizeof(double));
 
 	for (i = 0; i < m; i++) {
 		for (j = 0; j < p; j++) {
 			sum=0;
 			for (k = 0; k < n; k++) {
-				//result[i * p + j] += array1[i * n + k] * array2[j * n + k];
 				sum += array1[i * n + k] * array2[j * n + k];
 			}
 			
 				nod[i][j].index=i;
 				nod[i][j].value = sum;
-				
-				fprintf(test, "%lf ", nod[i][j].value);
-				
+								
 				if(i==(m-1)){
 					nod[i][j].index=i;
 					nod[i][j].value += sum;
@@ -273,11 +269,10 @@ void logmkernel(FILE* test, struct svm_node **nod, const double* array1, const d
 					nod[i][j+1].value = 0;
 				}
 		}
-		fprintf(test, "\n");
 	}
 }
 
-void generateSample(int* labels, int* train_number, int no_classes, int* sz, int* train_id, double*train_label, int* test_id, int* test_label, int* test_size){
+void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*train_label, int* test_id, int* test_label, int* test_size){
 	int ii, i, size;
 
 	for (ii = 1; ii <= no_classes; ii++) {

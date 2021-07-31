@@ -1,15 +1,13 @@
 #include "header.h"
 
-
 int main(int argc, char* argv[]) {
 	//INITIALIZATION
-	int no_classes, wnd_sz, K;
-	int sz[3];
+	int no_classes, wnd_sz, K, sz[3];
 	int i, j, jj;
 	clock_t time;
 
 	if (argc < 5) {
-		printf("Parameter error\n"); // param.txt, MNF.txt, labels.txt, lcmrfea_all.txt
+		printf("Parameter error\n"); //param.txt, MNF.txt, labels.txt, lcmrfea_all.txt
 		exit(1);
 	}
 
@@ -28,15 +26,11 @@ int main(int argc, char* argv[]) {
 
 	double* RD_hsi = (double*)malloc(sizeof(double) * sz[0] * sz[1] * sz[2]);
 	int* labels = (int*)malloc(sizeof(int) * sz[0] * sz[1]);
-	int* train_number = (int*)malloc(sizeof(int) * no_classes);
 	double* lcmrfea_all = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
 	readHSI(f1, RD_hsi, sz);
 	readLabels(f2, labels, sz);
-
-	for (i = 0; i < no_classes; i++) {
-		train_number[i] = TRAIN_NUMBER;
-	}
+	
 	if (!f3) {
 		f3 = fopen(argv[4], "w");
 		fun_LCMR_all(test,RD_hsi, wnd_sz, K, sz, lcmrfea_all);
@@ -51,14 +45,11 @@ int main(int argc, char* argv[]) {
 	int* test_label = (int*)malloc(sizeof(int) * no_classes * sz[0] * sz[1]);
 	double* test_cov = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 	double* train_cov = (double*)malloc(sizeof(double) * sz[2] * sz[2] * no_classes * TRAIN_NUMBER);
-	double* ktrain = (double*)malloc(sizeof(double) * no_classes * TRAIN_NUMBER * ((no_classes * TRAIN_NUMBER)));
-	double* ktest = (double*)malloc(sizeof(double) * no_classes * TRAIN_NUMBER * sz[0] * sz[1]);
-	int* tmp = (int*)malloc(sizeof(int) * sz[0] * sz[1]);
 	double* OA = (double*)malloc(sizeof(double) * N_IT);
 	double* predict_label = (double*)malloc(sizeof(double) * sz[0] * sz[1]);
 	double* class_accuracy = (double*)malloc(sizeof(double) * no_classes);
-
 	double kappa;
+	
 	memset(OA, 0, sizeof(double)*N_IT);
 
 	//SVM
@@ -82,7 +73,7 @@ int main(int argc, char* argv[]) {
 		printf("N_IT: %d\n\n", i);
 		
 		int test_size = 0;
-		generateSample(labels, train_number, no_classes, sz, train_id, train_label, test_id, test_label, &test_size);
+		generateSample(labels, no_classes, sz, train_id, train_label, test_id, test_label, &test_size);
 
 		for (j = 0; j < (no_classes * TRAIN_NUMBER); j++) {
 			for (jj = 0; jj < sz[2]*sz[2]; jj++) {
@@ -91,14 +82,15 @@ int main(int argc, char* argv[]) {
 		}
 		memcpy(test_cov, lcmrfea_all, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
-		logmkernel(test, prob.x, train_cov, train_cov, ktrain, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  no_classes * TRAIN_NUMBER);
-		logmkernel(test, testnode, train_cov, test_cov, ktest, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  sz[0] * sz[1]);
+		logmkernel(test, prob.x, train_cov, train_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  no_classes * TRAIN_NUMBER);
+		logmkernel(test, testnode, train_cov, test_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  sz[0] * sz[1]); //forse trasposizione
 		
 		
 		if(svm_check_parameter(&prob,&param)){
-			printf("SVM parameter error!\n");
+			printf("SVM parameters error!\n");
 			exit(1);
 		}
+		
 		model = svm_train(&prob,&param);
 		
 		for(j=0; j<sz[0] * sz[1]; j++){
@@ -113,7 +105,7 @@ int main(int argc, char* argv[]) {
 		for (j = 0; j < no_classes; j++) {
 			printf("%lf ", class_accuracy[j]);
 		}
-		printf("\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy), OA[i],kappa);
+		printf("\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy), OA[i], kappa);
 	}
 	
 	time = clock()-time;
@@ -131,7 +123,6 @@ int main(int argc, char* argv[]) {
 
 	free(RD_hsi);
 	free(labels);
-	free(train_number);
 	free(lcmrfea_all);
 	free(train_id);
 	free(train_label);
@@ -139,12 +130,19 @@ int main(int argc, char* argv[]) {
 	free(test_label);
 	free(test_cov);
 	free(train_cov);
-	free(ktrain);
-	free(ktest);
-	free(tmp);
 	free(OA);
 	free(predict_label);
 	free(class_accuracy);
+	
+	for(i=0;i < no_classes * TRAIN_NUMBER; i++){
+		free(prob.x[i]);
+	}
+	free(prob.x);
+	
+	for(i=0; i<sz[0] * sz[1]; i++){
+		free(testnode[i]);
+	}
+	free(testnode);
 	
 	svm_free_and_destroy_model(&model);
 	svm_destroy_param(&param);
