@@ -7,7 +7,7 @@ int COLOR_MAP_CENTER[16][3] = {{ 0, 0, 255 },{ 0, 128, 0 },{ 0, 255, 0 },{ 255, 
 int COLOR_MAP_DC[16][3] = {{ 204, 102, 102 },{ 153, 51, 0 },{ 204, 153, 0 },{ 0, 255, 0 },{ 0, 102, 0 },{ 0, 51, 255 },{ 153, 153, 153 }};
 
 
-void writeBMP(double *data, int w, int h, char *filename, char *type) {
+void writeBMP(double *data, int w, int h, char const *filename, char const *type) {
 	FILE *f;
 	int x, y, r, g, b, idx, i, j;
 	unsigned char *img = NULL;

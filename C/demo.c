@@ -45,10 +45,8 @@ int main(int argc, char* argv[]) {
 		readlcmrFEA(f3, lcmrfea_all, sz);
 	}
 
-	return 0;
-
 	int* train_id = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
-	int* train_label = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
+	double* train_label = (double*)malloc(sizeof(double) * no_classes * TRAIN_NUMBER);
 	int* test_id = (int*)malloc(sizeof(int) * no_classes*sz[0]*sz[1]);
 	int* test_label = (int*)malloc(sizeof(int) * no_classes * sz[0] * sz[1]);
 	double* test_cov = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
@@ -63,35 +61,26 @@ int main(int argc, char* argv[]) {
 	double kappa;
 	memset(OA, 0, sizeof(double)*N_IT);
 
-
-	for (i = 0; i < sz[0] * sz[1]; i++) {
-		tmp[i] = 1;
-	}
-
-	//SVM settings
-	/*struct svm_model *model;
+	//SVM
+	struct svm_model *model;
 	struct svm_parameter param;
-	struct svm_problem prob; //corresponding to ktrain (?)
-	struct svm_node *testnode; //corresponding to ktest (?)
+	struct svm_problem prob;
+	struct svm_node **testnode;
 
-	param.svm_type = C_SVC;
-	param.kernel_type = PRECOMPUTED;
-	
-	param.eps = 0.001;
-	param.shrinking = ;
-	param.probability = ;
-	param.nr_weight = ;
-	param.weight = ;
-	param.weight_label = ;
-	param.C = ;
-	param.cache_size = 5;*/
+	svmSetParameter(&param);
+	svmSetProblem(&prob, train_label, no_classes * TRAIN_NUMBER);
+
+	testnode = (struct svm_node **)malloc(sz[0] * sz[1]*sizeof(struct svm_node*));
+	for(i=0; i<sz[0] * sz[1]; i++){
+		testnode[i] = (struct svm_node *)malloc(no_classes * TRAIN_NUMBER* sizeof(struct svm_node));
+	}
 
 	time = clock();
 	
 	//COMPUTATION
 	for (i = 0; i < N_IT; i++) {
 		printf("N_IT: %d\n\n", i);
-
+		
 		int test_size = 0;
 		generateSample(labels, train_number, no_classes, sz, train_id, train_label, test_id, test_label, &test_size);
 
@@ -102,16 +91,21 @@ int main(int argc, char* argv[]) {
 		}
 		memcpy(test_cov, lcmrfea_all, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
-		logmkernel(train_cov, train_cov, ktrain, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  no_classes * TRAIN_NUMBER);
-		logmkernel(train_cov, test_cov, ktest, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  sz[0] * sz[1]);
+		logmkernel(test, prob.x, train_cov, train_cov, ktrain, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  no_classes * TRAIN_NUMBER);
+		logmkernel(test, testnode, train_cov, test_cov, ktest, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  sz[0] * sz[1]);
 		
-		/*if(svm_check_parameter(&prob,&param)){
+		
+		if(svm_check_parameter(&prob,&param)){
 			printf("SVM parameter error!\n");
 			exit(1);
 		}
 		model = svm_train(&prob,&param);
-		//svm_predict_values(model, testnode, predict_label);
-		svm_free_model_content(model);*/
+		
+		for(j=0; j<sz[0] * sz[1]; j++){
+			predict_label[j]=svm_predict(model, testnode[j]);
+		}
+		
+		svm_free_model_content(model);
 
 		calcError(OA, class_accuracy, test_label, predict_label, test_id, i, test_size, no_classes, sz, &kappa);
 	
@@ -126,7 +120,7 @@ int main(int argc, char* argv[]) {
 	
 	printf("\nMean overall accuracy: %lf\n", mean(OA));
 	printf("\nElapsed time: %.5f seconds\n", ((double)time) / CLOCKS_PER_SEC);
-	writeBMP(predict_label, sz[1], sz[2], "map.jpg","india");
+	writeBMP(predict_label, sz[1], sz[2], "map.jpg", "india");
 	printf("\nClassification map image saved\n");
 
 	fclose(f0);
@@ -152,8 +146,8 @@ int main(int argc, char* argv[]) {
 	free(predict_label);
 	free(class_accuracy);
 	
-	//svm_free_and_destroy_model(&model);
-	//svm_destroy_param(&param);
+	svm_free_and_destroy_model(&model);
+	svm_destroy_param(&param);
 	
 	return 0;
 }
