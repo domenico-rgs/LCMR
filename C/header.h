@@ -22,7 +22,8 @@ void generateSample(const int* labels, const int* train_number, int no_classes, 
 void shuffle(int* array, int n);
 double mean(const double* OA);
 void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int n_it, int size, int no_classes, const int* sz, double* kappa);
+void scale_func(double *data, int *sz, int K);
 
-void quickSort(double *arr, int low, int high);
-int partition (double *arr, int low, int high);
+void quickSort(double *sli_id, double *arr, int low, int high);
+int partition (double *sli_id, double *arr, int low, int high);
 void swap(double* a, double* b);

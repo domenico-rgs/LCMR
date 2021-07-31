@@ -22,7 +22,7 @@ void readlcmrFEA(FILE* f3, double* lcmrfea_all, int* sz) {
 
 void savelcmrFEA(FILE* file, double* lcmrfea_all, int* sz) {
 	int i, j;
-
+	
 	for (i = 0; i < sz[0] * sz[1] * sz[2]; i++) {
 		for (j = 0; j < sz[2]; j++) {
 			fprintf(file, "%lf ", lcmrfea_all[i * sz[2] + j]);
@@ -81,12 +81,14 @@ void fun_LCMR_all(FILE* file, double *RD_hsi, int wnd_sz, int K, int* sz, double
 	double* norm_temp = (double*)malloc(sizeof(double) * (2 * scale + 1)* (2 * scale + 1));
 	double* norm_block_2d = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1) * sz[2]);
 	double* cor = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
-	int* sli_id = (int*)malloc(sizeof(int) * K);
+	double* sli_id = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
+	double* tmp_mat = (double*)malloc(sizeof(double) * sz[2] * K);
+	double* mean_mat = (double*)malloc(sizeof(double) * sz[2]);
+	double* tmp = (double*)malloc(sizeof(double) * sz[2] * sz[2]);
 
-	memset(norm_temp, 0, sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
 
-	for (i = 0; i < 1; i++) { //sz[0]
-		for (j = 0; j < 1; j++) { //sz[1]
+	for (i = 0; i < sz[0]; i++) { 
+		for (j = 0; j < sz[1]; j++) { 
 
 			for (k = 0; k < sz[2]; k++) {
 				for (ii = i; ii <= i + 2*scale; ii++) {
@@ -95,6 +97,8 @@ void fun_LCMR_all(FILE* file, double *RD_hsi, int wnd_sz, int K, int* sz, double
 					}
 				}
 			}
+			
+			memset(norm_temp, 0, sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
 			
 			for (ii = 0; ii < sz[2]; ii++) {
 				for (jj = 0; jj < (2 * scale + 1) * (2 * scale + 1); jj++) {
@@ -113,16 +117,60 @@ void fun_LCMR_all(FILE* file, double *RD_hsi, int wnd_sz, int K, int* sz, double
 			for (jj = 0; jj < (2 * scale + 1) * (2 * scale + 1); jj++) {
 				for (k = 0; k < sz[2]; k++) {
 					cor[jj] += norm_block_2d[k * (2 * scale + 1) * (2 * scale + 1)+id] * norm_block_2d[k * (2 * scale + 1) * (2 * scale + 1) + jj];
+					sli_id[jj]=jj;
 				}
 			}
 
-			quickSort(cor, 0, (2 * scale + 1) * (2 * scale + 1)-1);
+			quickSort(sli_id, cor, 0, (2 * scale + 1) * (2 * scale + 1)-1);
 			
-			for(ii=0; ii<(2 * scale + 1) * (2 * scale + 1); ii++){
-				fprintf(file, "%lf ", cor[ii]);
+			for (k = 0; k < sz[2]; k++) {
+				for (jj = 0; jj < K; jj++) {
+					tmp_mat[k*K+jj] = tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1)+(int)sli_id[jj]];
+				}
 			}
-			//TO BE CONTINUED
+			scale_func(tmp_mat, sz, K);
+			
+			memset(mean_mat, 0, sizeof(double) * sz[2]);
 
+			for(k=0; k<sz[2]; k++){
+				for (jj = 0; jj < K; jj++) {
+					mean_mat[k] += tmp_mat[k*K+jj];
+				}
+				mean_mat[k] /= K;
+			}
+			
+			for(k=0; k<sz[2]; k++){
+				for (jj = 0; jj < K; jj++) {
+					tmp_mat[k*K+jj]= tmp_mat[k*K+jj]-mean_mat[k];
+				}
+			}
+		
+			memset(tmp, 0, sizeof(double) * sz[2] * sz[2]);
+						
+			for (ii = 0; ii < sz[2]; ii++) {
+				for (jj = 0; jj < sz[2]; jj++) {
+					for (k = 0; k < K; k++) {
+						tmp[ii * sz[2] + jj] += tmp_mat[ii * K + k] * tmp_mat[jj * K + k];
+					}
+					tmp[ii * sz[2] + jj] /= (K-1);
+				}
+			}
+
+			double trace = 0;
+			
+			for(k=0; k<sz[2]; k++){
+				trace += tmp[k*sz[2]+k];
+			}
+			
+			for(k=0; k<sz[2]; k++){
+				for (jj = 0; jj < sz[2]; jj++) {
+					if(k==jj){
+						tmp[k*sz[2]+jj] += tol*trace;
+					}
+				}
+			}
+			//LOGM TO BE ADDED
+			memcpy(&lcmrfea_all[(i*sz[1]+j)*sz[2]*sz[2]+j], tmp, sz[2] * sz[2]*sizeof(double));
 		}
 	}
 
@@ -130,8 +178,42 @@ void fun_LCMR_all(FILE* file, double *RD_hsi, int wnd_sz, int K, int* sz, double
 	free(norm_temp);
 	free(norm_block_2d);
 	free(cor);
-	free(sort_id);
+	free(sli_id);
+	free(tmp_mat);
+	free(mean_mat);
+	free(tmp);
 	free(RD_ex);
+}
+
+void scale_func(double *data, int *sz, int K){
+	int i, j=0;
+	
+	double* min = (double*)malloc(sizeof(double) * K);
+	double* max = (double*)malloc(sizeof(double) * K);
+	
+	for(i=0; i<K; i++){
+		min[i]=data[j*K+i];
+		max[i]=data[j*K+i];
+		
+		for(j=0; j<sz[2]; j++){
+			if(data[j*K+i]>max[i]){
+				max[i]=data[j*K+i];
+			}
+			
+			if(data[j*K+i]<min[i]){
+				min[i]=data[j*K+i];
+			}
+		}
+	}
+	
+	for(i=0; i<sz[2]; i++){
+		for(j=0; j<K; j++){
+			data[i*K+j] = (data[i*K+j]-min[j])/(max[j]-min[j]);
+		}
+	}
+	
+	free(min);
+	free(max);
 }
 
 void swap(double* a, double* b){
@@ -140,7 +222,7 @@ void swap(double* a, double* b){
 	*b = t;
 
 }
-int partition (double *arr, int low, int high){
+int partition (double *sli_id, double *arr, int low, int high){
 	double pivot = arr[high];
 	int i = (low - 1);
 	
@@ -148,18 +230,20 @@ int partition (double *arr, int low, int high){
 		if (arr[j] >= pivot){	
 			i++;
 			swap(&arr[i], &arr[j]);
+			swap(&sli_id[i], &sli_id[j]);
 		}
 	}
 	swap(&arr[i + 1], &arr[high]);
+	swap(&sli_id[i + 1], &sli_id[high]);
 	
 	return (i + 1);
 }
 
-void quickSort(double *arr, int low, int high){
+void quickSort(double *sli_id, double *arr, int low, int high){
 	if (low < high){
-		int pi = partition(arr, low, high);
-		quickSort(arr, low, pi - 1);
-		quickSort(arr, pi + 1, high);
+		int pi = partition(sli_id, arr, low, high);
+		quickSort(sli_id, arr, low, pi - 1);
+		quickSort(sli_id, arr, pi + 1, high);
 	}
 }
 

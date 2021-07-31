@@ -37,10 +37,10 @@ int main(int argc, char* argv[]) {
 	for (i = 0; i < no_classes; i++) {
 		train_number[i] = TRAIN_NUMBER;
 	}
-	if (1) { //!f3
-		f3 = fopen(argv[3], "w");
+	if (!f3) {
+		f3 = fopen(argv[4], "w");
 		fun_LCMR_all(test,RD_hsi, wnd_sz, K, sz, lcmrfea_all);
-		//savelcmrFEA(f3,lcmrfea_all, sz);
+		savelcmrFEA(f3,lcmrfea_all, sz);
 	}else {
 		readlcmrFEA(f3, lcmrfea_all, sz);
 	}
