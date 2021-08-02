@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 	
 	if (!f3) {
 		f3 = fopen(argv[4], "w");
-		fun_LCMR_all(test,RD_hsi, wnd_sz, K, sz, lcmrfea_all);
+		fun_LCMR_all(RD_hsi, wnd_sz, K, sz, lcmrfea_all);
 		savelcmrFEA(f3,lcmrfea_all, sz);
 	}else {
 		readlcmrFEA(f3, lcmrfea_all, sz);
@@ -58,19 +58,19 @@ int main(int argc, char* argv[]) {
 	struct svm_problem prob;
 	struct svm_node **testnode;
 
-	svmSetParameter(&param);
+	svmSetParameter(&param, no_classes * TRAIN_NUMBER);
 	svmSetProblem(&prob, train_label, no_classes * TRAIN_NUMBER);
 
 	testnode = (struct svm_node **)malloc(sz[0] * sz[1]*sizeof(struct svm_node*));
 	for(i=0; i<sz[0] * sz[1]; i++){
-		testnode[i] = (struct svm_node *)malloc(no_classes * TRAIN_NUMBER* sizeof(struct svm_node));
+		testnode[i] = (struct svm_node *)malloc((no_classes * TRAIN_NUMBER + 2)* sizeof(struct svm_node));
 	}
 
 	time = clock();
 	
 	//COMPUTATION
 	for (i = 0; i < N_IT; i++) {
-		printf("N_IT: %d\n\n", i);
+		printf("N_IT: %d\n\n", i+1);
 		
 		int test_size = 0;
 		generateSample(labels, no_classes, sz, train_id, train_label, test_id, test_label, &test_size);
@@ -82,8 +82,8 @@ int main(int argc, char* argv[]) {
 		}
 		memcpy(test_cov, lcmrfea_all, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
-		logmkernel(test, prob.x, train_cov, train_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  no_classes * TRAIN_NUMBER);
-		logmkernel(test, testnode, train_cov, test_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  sz[0] * sz[1]); //forse trasposizione
+		logmTrain(test,prob.x, train_cov, train_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  no_classes * TRAIN_NUMBER);
+		logmTest(test, testnode, train_cov, test_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  sz[0] * sz[1]); 
 		
 		
 		if(svm_check_parameter(&prob,&param)){
@@ -101,19 +101,19 @@ int main(int argc, char* argv[]) {
 
 		calcError(OA, class_accuracy, test_label, predict_label, test_id, i, test_size, no_classes, sz, &kappa);
 	
-		printf("Class Accuracy: ");
+		printf("\n**********************\nClass Accuracy: ");
 		for (j = 0; j < no_classes; j++) {
 			printf("%lf ", class_accuracy[j]);
 		}
-		printf("\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy), OA[i], kappa);
+		printf("\n\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy), OA[i], kappa);
 	}
 	
 	time = clock()-time;
 	
 	printf("\nMean overall accuracy: %lf\n", mean(OA));
 	printf("\nElapsed time: %.5f seconds\n", ((double)time) / CLOCKS_PER_SEC);
-	writeBMP(predict_label, sz[1], sz[2], "map.jpg", "india");
-	printf("\nClassification map image saved\n");
+	writeBMP(predict_label, sz[0], sz[1], "map.jpg", "india");
+	printf("Classification map image saved\n");
 
 	fclose(f0);
 	fclose(f1);

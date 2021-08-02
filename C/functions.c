@@ -13,9 +13,9 @@ void readHSI(FILE* f1, double* RD_HSI, int *sz) {
 void readlcmrFEA(FILE* f3, double* lcmrfea_all, int* sz) {
 	int i, j;
 
-	for (i = 0; i < sz[0] * sz[1] * sz[2]; i++) {
-		for (j = 0; j < sz[2]; j++) {
-			fscanf(f3, "%lf", &lcmrfea_all[i * sz[2] + j]);
+	for (i = 0; i < sz[2] * sz[2]; i++) {
+		for (j = 0; j < sz[0] * sz[1]; j++) {
+			fscanf(f3, "%lf", &lcmrfea_all[i * sz[0] * sz[1] + j]);
 		}
 	}
 }
@@ -23,9 +23,9 @@ void readlcmrFEA(FILE* f3, double* lcmrfea_all, int* sz) {
 void savelcmrFEA(FILE* file, double* lcmrfea_all, int* sz) {
 	int i, j;
 	
-	for (i = 0; i < sz[0] * sz[1] * sz[2]; i++) {
-		for (j = 0; j < sz[2]; j++) {
-			fprintf(file, "%lf ", lcmrfea_all[i * sz[2] + j]);
+	for (i = 0; i < sz[0] * sz[1]; i++) {
+		for (j = 0; j < sz[2]*sz[2]; j++) {
+			fprintf(file, "%lf ", lcmrfea_all[i * sz[2]*sz[2] + j]);
 		}
 		fprintf(file, "\n");
 	}
@@ -41,7 +41,7 @@ void readLabels(FILE* f2, int* labels, int* sz) {
 	}
 }
 
-void fun_LCMR_all(FILE* file, double *RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
+void fun_LCMR_all(double *RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
 	double tol = 1e-3;
 	int scale = (int)floor(wnd_sz / 2);
 	int id = (int)ceil(wnd_sz * wnd_sz / 2);
@@ -247,7 +247,7 @@ void quickSort(double *sli_id, double *arr, int low, int high){
 	}
 }
 
-void logmkernel(FILE* test, struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
+void logmTrain(FILE* test,struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
 	int i, j, k;
 	double sum=0;
 
@@ -258,18 +258,58 @@ void logmkernel(FILE* test, struct svm_node **nod, const double* array1, const d
 				sum += array1[i * n + k] * array2[j * n + k];
 			}
 			
-				nod[i][j].index=i;
-				nod[i][j].value = sum;
-								
-				if(i==(m-1)){
-					nod[i][j].index=i;
-					nod[i][j].value += sum;
-					
-					nod[i][j+1].index=-1;
-					nod[i][j+1].value = 0;
-				}
+			nod[i][j+1].index=j+1;	
+			nod[i][j+1].value = sum;
+							
 		}
 	}
+	
+	for(i=0; i<m; i++){
+			nod[i][0].index=0;
+			nod[i][0].value=i+1;
+		
+			nod[i][m+1].index=-1;
+			nod[i][m+1].value=0;
+	}
+	
+	/*for (i = 0; i < m; i++) {
+		for (j = 0; j < p+2; j++) {
+			fprintf(test,"%lf ",nod[i][j].value);
+		}
+		fprintf(test,"\n");
+	}*/
+}
+
+void logmTest(FILE *test, struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
+	int i, j, k;
+	double sum=0;
+
+	for (i = 0; i < m; i++) {
+		for (j = 0; j < p; j++) {
+			sum=0;
+			for (k = 0; k < n; k++) {
+				sum += array1[i * n + k] * array2[j * n + k];
+			}
+			
+			nod[j][i+1].index=i+1;	
+			nod[j][i+1].value = sum;
+		}
+	}
+	
+	for(i=0; i<p; i++){
+			nod[i][0].index=0;
+			nod[i][0].value=i+1;
+		
+			nod[i][m+1].index=-1;
+			nod[i][m+1].value=0;
+	}
+	
+/*	for (i = 0; i < p; i++) {
+		for (j = 0; j < m+2; j++) {
+			fprintf(test,"%lf ",nod[i][j].value);
+		}
+		fprintf(test,"\n");
+	}*/
 }
 
 void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*train_label, int* test_id, int* test_label, int* test_size){
@@ -293,7 +333,7 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 
 		for (i = 0; i < test_size[0]; i++) {
 			if (test_label[i] == (ii + 1)) {
-				W_class_index[size] = i+1;
+				W_class_index[size] = i + 1;
 				size++;
 			}
 		}
@@ -335,12 +375,13 @@ double mean(const double* OA) {
 
 void calcError(double *OA, double *class_accuracy, const int *test_label, const double *predicted_label, const int* test_id, int n_it, int size, int no_classes, const int* sz, double* kappa){
 	const double eps = 2.2204e-16;
-	int ii, i, j, k, len_true, len_seg;
+	int ii, i, j, k, t, len_true, len_seg, len, flag;
 
 	int* nrPixelsPerClass = (int*)malloc(sizeof(int) * no_classes);
 	int* errorMatrix = (int*)malloc(sizeof(int) * no_classes*no_classes);
 	int* tmp_true = (int*)malloc(sizeof(int) * size);
-	int* tmp_seg = (int*)malloc(sizeof(int) * sz[0]*sz[1]);
+	int* tmp_seg = (int*)malloc(sizeof(int) * size);
+	int* tmp = (int*)malloc(sizeof(int) * size);
 
 	memset(nrPixelsPerClass, 0, sizeof(int) * no_classes);
 	memset(errorMatrix, 0, sizeof(int) * no_classes*no_classes);
@@ -348,32 +389,45 @@ void calcError(double *OA, double *class_accuracy, const int *test_label, const 
 	for (ii = 0; ii < no_classes; ii++) {
 		len_true = 0;
 		for (i = 0; i < size; i++) {
-			if (test_label[i] == ii) {
-				tmp_true[len_true] = ii;
+			if (test_label[i]-1 == ii) {
+				tmp_true[len_true] = i;
 				len_true++;
 			}
 		}
 		nrPixelsPerClass[ii] = len_true;
+
 		for (i = 0; i < no_classes; i++) {
 			len_seg = 0;
-			for (j = 0; j < sz[0] * sz[1]; j++) {
-				if (predicted_label[j] == i) {
-					tmp_seg[len_seg] = i;
+			for (j = 0; j < size; j++) {
+				if (predicted_label[test_id[j]]-1 == i) {
+					tmp_seg[len_seg] = j;
 					len_seg++;
 				}
 			}
+			
+			len=0;
 			for (j = 0; j < len_true; j++) {
 				for (k = 0; k < len_seg; k++) {
-					if (tmp_true[j] == tmp_true[k]) {
-						errorMatrix[ii*no_classes+i]++;
+					if (tmp_true[j] == tmp_seg[k]) {
+						flag=0;
+						for(t=0; t<len; t++){
+							if(tmp[t]==tmp_true[j]){
+								flag=1;
+							}
+						}
+						if(flag!=1){
+							tmp[t]=tmp_true[j];
+							len++;
+						}
 					}
 				}
 			}
+			errorMatrix[ii*no_classes+i]=len;
 		}
 	}
 
 	for(ii=0; ii<size; ii++){
-		if ((test_label[ii] - 1) == (int)(predicted_label[test_id[ii]] - 1)) {
+		if ((test_label[ii]-1) == (int)(predicted_label[test_id[ii]]-1)) {
 			OA[n_it]++;
 		}
 	}
@@ -388,12 +442,12 @@ void calcError(double *OA, double *class_accuracy, const int *test_label, const 
 		col_val = 0; row_val = 0;
 		for (j = 0; j < no_classes; j++) {
 			tot_sum += errorMatrix[i * no_classes + j];
-			diag_sum += errorMatrix[i * no_classes + i];
 			row_val += errorMatrix[i * no_classes + j];
 			col_val += errorMatrix[j * no_classes + i];
 		}
 		prod_mat += col_val * row_val;
 
+		diag_sum += errorMatrix[i * no_classes + i];
 		class_accuracy[i] = errorMatrix[i * no_classes + i] / (nrPixelsPerClass[i] + eps);
 	}
 
@@ -401,19 +455,23 @@ void calcError(double *OA, double *class_accuracy, const int *test_label, const 
 
 	free(tmp_true);
 	free(tmp_seg);
+	free(tmp);
 	free(nrPixelsPerClass);
 	free(errorMatrix);
 }
 
-void svmSetParameter(struct svm_parameter *param){
+void svmSetParameter(struct svm_parameter *param, int no_fea){
 	param->svm_type = C_SVC;
 	param->kernel_type = PRECOMPUTED;
+	param->degree = 3;
+	param->coef0 = 0;
+	param->gamma = 1/(double)(no_fea+1);
 	
 	param->eps = 0.001;
-	param->shrinking = 0;
-	param->probability = 0;
 	param->C = 1;
 	param->cache_size = 100;
+	param->shrinking = 0;
+	param->probability = 0;
 	
 	param->nr_weight = 0;
 	param->weight = NULL;
@@ -426,9 +484,9 @@ void svmSetProblem(struct svm_problem *prob, double *labels, int no_labels){
 	prob->l = no_labels;
 	prob->y= labels;
 	
-	prob->x= (struct svm_node**)malloc(no_labels * sizeof(struct svm_node*));
+	prob->x = (struct svm_node**)malloc((no_labels)* sizeof(struct svm_node*));
 	for(i=0; i<no_labels; i++){
-		prob->x[i]=(struct svm_node*)malloc((sizeof(struct svm_node)*(no_labels+1)));
+		prob->x[i]=(struct svm_node*)malloc((sizeof(struct svm_node)*(no_labels+2)));
 	}
 }
 
