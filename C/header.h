@@ -13,10 +13,10 @@
 #define N_IT 1
 
 //FILE 
-void readHSI(FILE* f1, double* RD_HSI, int* sz);
-void readLabels(FILE* f2, int* labels, int* sz);
-void readlcmrFEA(FILE* f3, double* lcmrfea_all, int* sz);
-void savelcmrFEA(FILE* file, double* lcmrfea_all, int* sz);
+void readHSI(FILE *test,FILE* f1, double* RD_HSI, const int* sz);
+void readLabels(FILE *test, FILE* f2, int* labels, const int* sz);
+void readlcmrFEA(FILE* test,FILE* f3, double* lcmrfea_all, const int* sz);
+void savelcmrFEA(FILE* file, double* lcmrfea_all, const int* sz);
 
 //DATA
 void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all);
@@ -33,8 +33,8 @@ void svmSetParameter(struct svm_parameter *param, int no_fea);
 void svmSetProblem(struct svm_problem *prob, double *labels, int no_labels);
 
 //EXTRA FUNCTIONS
-double mean(const double* OA);
 void shuffle(int* array, int n);
+double mean(const double* array, int length);
 void quickSort(double *sli_id, double *arr, int low, int high);
 int partition (double *sli_id, double *arr, int low, int high);
 void swap(double* a, double* b);

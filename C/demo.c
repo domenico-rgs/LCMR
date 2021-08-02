@@ -28,21 +28,21 @@ int main(int argc, char* argv[]) {
 	int* labels = (int*)malloc(sizeof(int) * sz[0] * sz[1]);
 	double* lcmrfea_all = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
-	readHSI(f1, RD_hsi, sz);
-	readLabels(f2, labels, sz);
+	readHSI(test,f1, RD_hsi, sz);
+	readLabels(test, f2, labels, sz);
 	
 	if (!f3) {
 		f3 = fopen(argv[4], "w");
 		fun_LCMR_all(RD_hsi, wnd_sz, K, sz, lcmrfea_all);
 		savelcmrFEA(f3,lcmrfea_all, sz);
 	}else {
-		readlcmrFEA(f3, lcmrfea_all, sz);
+		readlcmrFEA(test,f3, lcmrfea_all, sz);
 	}
 
 	int* train_id = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
 	double* train_label = (double*)malloc(sizeof(double) * no_classes * TRAIN_NUMBER);
-	int* test_id = (int*)malloc(sizeof(int) * no_classes*sz[0]*sz[1]);
-	int* test_label = (int*)malloc(sizeof(int) * no_classes * sz[0] * sz[1]);
+	int* test_id = (int*)malloc(sizeof(int) * (no_classes*sz[0]*sz[1]-no_classes * TRAIN_NUMBER));
+	int* test_label = (int*)malloc(sizeof(int) * (no_classes * sz[0] * sz[1]-no_classes * TRAIN_NUMBER));
 	double* test_cov = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 	double* train_cov = (double*)malloc(sizeof(double) * sz[2] * sz[2] * no_classes * TRAIN_NUMBER);
 	double* OA = (double*)malloc(sizeof(double) * N_IT);
@@ -55,8 +55,8 @@ int main(int argc, char* argv[]) {
 	//SVM
 	struct svm_model *model;
 	struct svm_parameter param;
-	struct svm_problem prob;
-	struct svm_node **testnode;
+	struct svm_problem prob; // = ktrain
+	struct svm_node **testnode; // = ktest
 
 	svmSetParameter(&param, no_classes * TRAIN_NUMBER);
 	svmSetProblem(&prob, train_label, no_classes * TRAIN_NUMBER);
@@ -86,13 +86,13 @@ int main(int argc, char* argv[]) {
 		logmTest(test, testnode, train_cov, test_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  sz[0] * sz[1]); 
 		
 		
-		if(svm_check_parameter(&prob,&param)){
+		/*if(svm_check_parameter(&prob,&param)){
 			printf("SVM parameters error!\n");
 			exit(1);
-		}
+		}*/
 		
 		model = svm_train(&prob,&param);
-		
+				
 		for(j=0; j<sz[0] * sz[1]; j++){
 			predict_label[j]=svm_predict(model, testnode[j]);
 		}
@@ -105,13 +105,13 @@ int main(int argc, char* argv[]) {
 		for (j = 0; j < no_classes; j++) {
 			printf("%lf ", class_accuracy[j]);
 		}
-		printf("\n\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy), OA[i], kappa);
+		printf("\n\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy,no_classes), OA[i], kappa);
 	}
 	
 	time = clock()-time;
 	
-	printf("\nMean overall accuracy: %lf\n", mean(OA));
-	printf("\nElapsed time: %.5f seconds\n", ((double)time) / CLOCKS_PER_SEC);
+	printf("\nMean overall accuracy: %lf\n", mean(OA, N_IT));
+	printf("\nElapsed computation time: %.5f seconds\n", ((double)time) / CLOCKS_PER_SEC);
 	writeBMP(predict_label, sz[0], sz[1], "map.jpg", "india");
 	printf("Classification map image saved\n");
 

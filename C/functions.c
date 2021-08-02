@@ -1,26 +1,30 @@
 #include "header.h"
 
-void readHSI(FILE* f1, double* RD_HSI, int *sz) {
+void readHSI(FILE *test, FILE* f1, double* RD_HSI, const int *sz) {
 	int i, j;
 
 	for (i = 0; i < sz[2]; i++) {
 		for (j = 0; j < sz[0]*sz[1]; j++) {
 			fscanf(f1, "%lf", &RD_HSI[i*sz[0]*sz[1]+j]);
+			//fprintf(test,"%lf ",RD_HSI[i*sz[0]*sz[1]+j]);
 		}
+		//fprintf(test,"\n");
 	}
 }
 
-void readlcmrFEA(FILE* f3, double* lcmrfea_all, int* sz) {
+void readlcmrFEA(FILE *test, FILE* f3, double* lcmrfea_all, const int* sz) {
 	int i, j;
 
-	for (i = 0; i < sz[2] * sz[2]; i++) {
-		for (j = 0; j < sz[0] * sz[1]; j++) {
-			fscanf(f3, "%lf", &lcmrfea_all[i * sz[0] * sz[1] + j]);
+	for (i = 0; i < sz[0] * sz[1]; i++) {
+		for (j = 0; j < sz[2] * sz[2]; j++) {
+			fscanf(f3, "%lf", &lcmrfea_all[i * sz[2] * sz[2] + j]);
+			//fprintf(test,"%lf ",lcmrfea_all[i * sz[2] * sz[2] + j]);
 		}
+		//fprintf(test,"\n");
 	}
 }
 
-void savelcmrFEA(FILE* file, double* lcmrfea_all, int* sz) {
+void savelcmrFEA(FILE* file, double* lcmrfea_all, const int* sz) {
 	int i, j;
 	
 	for (i = 0; i < sz[0] * sz[1]; i++) {
@@ -31,13 +35,15 @@ void savelcmrFEA(FILE* file, double* lcmrfea_all, int* sz) {
 	}
 }
 
-void readLabels(FILE* f2, int* labels, int* sz) {
+void readLabels(FILE *test, FILE* f2, int* labels, const int* sz) {
 	int i, j;
 
 	for (i = 0; i < sz[0]; i++) {
 		for (j = 0; j < sz[1]; j++) {
 			fscanf(f2, "%d", &labels[i * sz[1] + j]);
+			//fprintf(test,"%d ",labels[i * sz[1] + j]);
 		}
+		//fprintf(test,"\n");
 	}
 }
 
@@ -259,17 +265,14 @@ void logmTrain(FILE* test,struct svm_node **nod, const double* array1, const dou
 			}
 			
 			nod[i][j+1].index=j+1;	
-			nod[i][j+1].value = sum;
-							
+			nod[i][j+1].value = sum;					
 		}
-	}
-	
-	for(i=0; i<m; i++){
-			nod[i][0].index=0;
-			nod[i][0].value=i+1;
 		
-			nod[i][m+1].index=-1;
-			nod[i][m+1].value=0;
+		nod[i][0].index=0;
+		nod[i][0].value=i+1;
+		
+		nod[i][m+1].index=-1;
+		nod[i][m+1].value=0;
 	}
 	
 	/*for (i = 0; i < m; i++) {
@@ -293,47 +296,48 @@ void logmTest(FILE *test, struct svm_node **nod, const double* array1, const dou
 			
 			nod[j][i+1].index=i+1;	
 			nod[j][i+1].value = sum;
+			
+			nod[j][0].index=0;
+			nod[j][0].value=j+1;
+		
+			nod[j][m+1].index=-1;
+			nod[j][m+1].value=0;
 		}
 	}
 	
-	for(i=0; i<p; i++){
-			nod[i][0].index=0;
-			nod[i][0].value=i+1;
-		
-			nod[i][m+1].index=-1;
-			nod[i][m+1].value=0;
-	}
-	
-/*	for (i = 0; i < p; i++) {
+	/*for (i = 0; i < p; i++) {
 		for (j = 0; j < m+2; j++) {
-			fprintf(test,"%lf ",nod[i][j].value);
+			fprintf(test,"%d ",nod[i][j].index);
 		}
 		fprintf(test,"\n");
 	}*/
 }
 
 void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*train_label, int* test_id, int* test_label, int* test_size){
-	int ii, i, size;
+	int ii, i, size, len=0;
+	srand((unsigned)time(NULL));
+	double* tmp_label = (double*)malloc(sizeof(double) * no_classes*sz[0]*sz[1]);
+	int* tmp_id = (int*)malloc(sizeof(int) * no_classes*sz[0]*sz[1]);
+
 
 	for (ii = 1; ii <= no_classes; ii++) {
 		for (i = 0; i < (sz[0] * sz[1]); i++) {
 			if (labels[i] == (ii)) {
-				test_id[test_size[0]] = i;
-				test_label[test_size[0]] = ii;
+				tmp_id[test_size[0]] = i;
+				tmp_label[test_size[0]] = ii;
 				test_size[0]++;
 			}
 		}
 	}
 
-	int* indexes = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
 	int* W_class_index = (int*)malloc(sizeof(int) * test_size[0]);
 
-	for (ii = 0; ii < no_classes; ii++) {
+	for (ii = 1; ii <= no_classes; ii++) {
 		size = 0;
 
 		for (i = 0; i < test_size[0]; i++) {
-			if (test_label[i] == (ii + 1)) {
-				W_class_index[size] = i + 1;
+			if (tmp_label[i] == ii) {
+				W_class_index[size] = i;
 				size++;
 			}
 		}
@@ -341,13 +345,27 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 		shuffle(W_class_index, size);
 
 		for (i = 0; i < TRAIN_NUMBER; i++) {
-			train_id[ii*TRAIN_NUMBER+i] = test_id[W_class_index[i]];
-			train_label[ii*TRAIN_NUMBER+i] = test_label[W_class_index[i]];
+			//int ind = 1 + rand() % size;
+			//printf("%d ",ind);
+			train_id[(ii-1)*TRAIN_NUMBER+i] = tmp_id[W_class_index[i]];
+			train_label[(ii-1)*TRAIN_NUMBER+i] = tmp_label[W_class_index[i]];
+			tmp_label[W_class_index[i]]=HUGE_VAL;
+		}
+		//printf("\n");
+	}
+	
+	for(ii=0; ii<test_size[0]; ii++){
+		if(tmp_label[ii] != HUGE_VAL){
+			test_id[len]=tmp_id[ii];
+			test_label[len]=tmp_label[ii];
+			len++;
 		}
 	}
+	test_size[0]=len;
 
+	free(tmp_id);
+	free(tmp_label);
 	free(W_class_index);
-	free(indexes);
 }
 
 void shuffle(int* array, int n){
@@ -363,14 +381,14 @@ void shuffle(int* array, int n){
 	}
 }
 
-double mean(const double* OA) {
+double mean(const double* array, int length) {
 	int i;
 	double sum = 0;
-	for (i = 0; i < N_IT; i++) {
-		sum += OA[i];
+	for (i = 0; i < length; i++) {
+		sum += array[i];
 	}
 
-	return sum / N_IT;
+	return sum / length;
 }
 
 void calcError(double *OA, double *class_accuracy, const int *test_label, const double *predicted_label, const int* test_id, int n_it, int size, int no_classes, const int* sz, double* kappa){
@@ -467,10 +485,10 @@ void svmSetParameter(struct svm_parameter *param, int no_fea){
 	param->coef0 = 0;
 	param->gamma = 1/(double)(no_fea+1);
 	
-	param->eps = 0.001;
+	param->eps = 0.01;
 	param->C = 1;
 	param->cache_size = 100;
-	param->shrinking = 0;
+	param->shrinking = 1;
 	param->probability = 0;
 	
 	param->nr_weight = 0;
