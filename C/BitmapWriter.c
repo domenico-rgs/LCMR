@@ -37,7 +37,7 @@ void writeBMP(double *data, int w, int h, char const *filename, char const *type
 		for (j = 0; j<h; j++)
 		{
 			x = i; y = (h - 1) - j;
-			idx = (int)data[j + i*w];
+			idx = (int)data[j + i*w]-1; //adapted
 			r = COLOR_MAP[idx][0];
 			g = COLOR_MAP[idx][1];
 			b = COLOR_MAP[idx][2];

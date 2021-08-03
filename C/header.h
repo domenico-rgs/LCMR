@@ -20,7 +20,7 @@ void savelcmrFEA(FILE* file, double* lcmrfea_all, const int* sz);
 
 //DATA
 void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all);
-void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size);
+void generateSample(FILE *test,int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size);
 
 //COMPUTATION
 void logmTrain(FILE *test, struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p);

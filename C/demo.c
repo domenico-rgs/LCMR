@@ -73,23 +73,26 @@ int main(int argc, char* argv[]) {
 		printf("N_IT: %d\n\n", i+1);
 		
 		int test_size = 0;
-		generateSample(labels, no_classes, sz, train_id, train_label, test_id, test_label, &test_size);
+		generateSample(test,labels, no_classes, sz, train_id, train_label, test_id, test_label, &test_size);
 
 		for (j = 0; j < (no_classes * TRAIN_NUMBER); j++) {
 			for (jj = 0; jj < sz[2]*sz[2]; jj++) {
 				train_cov[j*sz[2]*sz[2]+jj] = lcmrfea_all[train_id[j]*sz[2]*sz[2] + jj];
 			}
+			//fprintf(test,"%d\n",train_id[j]);
+			//fprintf(test,"\n");
 		}
+		//printf("TRAIN_ID: %d\n",train_id[0]);
 		memcpy(test_cov, lcmrfea_all, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
 		logmTrain(test,prob.x, train_cov, train_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  no_classes * TRAIN_NUMBER);
 		logmTest(test, testnode, train_cov, test_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  sz[0] * sz[1]); 
 		
 		
-		/*if(svm_check_parameter(&prob,&param)){
+		if(svm_check_parameter(&prob,&param)){
 			printf("SVM parameters error!\n");
 			exit(1);
-		}*/
+		}
 		
 		model = svm_train(&prob,&param);
 				

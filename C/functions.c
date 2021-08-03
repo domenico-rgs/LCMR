@@ -40,8 +40,8 @@ void readLabels(FILE *test, FILE* f2, int* labels, const int* sz) {
 
 	for (i = 0; i < sz[0]; i++) {
 		for (j = 0; j < sz[1]; j++) {
-			fscanf(f2, "%d", &labels[i * sz[1] + j]);
-			//fprintf(test,"%d ",labels[i * sz[1] + j]);
+			fscanf(f2, "%d", &labels[j * sz[1] + i]);
+			//fprintf(test,"%d\n",labels[j * sz[1] + i]);
 		}
 		//fprintf(test,"\n");
 	}
@@ -255,7 +255,7 @@ void quickSort(double *sli_id, double *arr, int low, int high){
 
 void logmTrain(FILE* test,struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
 	int i, j, k;
-	double sum=0;
+	double sum;
 
 	for (i = 0; i < m; i++) {
 		for (j = 0; j < p; j++) {
@@ -285,7 +285,7 @@ void logmTrain(FILE* test,struct svm_node **nod, const double* array1, const dou
 
 void logmTest(FILE *test, struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
 	int i, j, k;
-	double sum=0;
+	double sum;
 
 	for (i = 0; i < m; i++) {
 		for (j = 0; j < p; j++) {
@@ -307,13 +307,13 @@ void logmTest(FILE *test, struct svm_node **nod, const double* array1, const dou
 	
 	/*for (i = 0; i < p; i++) {
 		for (j = 0; j < m+2; j++) {
-			fprintf(test,"%d ",nod[i][j].index);
+			fprintf(test,"%lf ",nod[i][j].value);
 		}
 		fprintf(test,"\n");
 	}*/
 }
 
-void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*train_label, int* test_id, int* test_label, int* test_size){
+void generateSample(FILE *test, int* labels, int no_classes, int* sz, int* train_id, double*train_label, int* test_id, int* test_label, int* test_size){
 	int ii, i, size, len=0;
 	srand((unsigned)time(NULL));
 	double* tmp_label = (double*)malloc(sizeof(double) * no_classes*sz[0]*sz[1]);
@@ -322,12 +322,14 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 
 	for (ii = 1; ii <= no_classes; ii++) {
 		for (i = 0; i < (sz[0] * sz[1]); i++) {
-			if (labels[i] == (ii)) {
+			if (labels[i] == ii) {
 				tmp_id[test_size[0]] = i;
 				tmp_label[test_size[0]] = ii;
+				//fprintf(test,"%d ",tmp_id[test_size[0]]);
 				test_size[0]++;
 			}
 		}
+		//fprintf(test,"\n");
 	}
 
 	int* W_class_index = (int*)malloc(sizeof(int) * test_size[0]);
