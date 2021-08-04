@@ -13,18 +13,18 @@
 #define N_IT 1
 
 //FILE 
-void readHSI(FILE *test,FILE* f1, double* RD_HSI, const int* sz);
-void readLabels(FILE *test, FILE* f2, int* labels, const int* sz);
-void readlcmrFEA(FILE* test,FILE* f3, double* lcmrfea_all, const int* sz);
+void readHSI(FILE* f1, double* RD_HSI, const int* sz);
+void readLabels(FILE* f2, int* labels, const int* sz);
+void readlcmrFEA(FILE* f3, double* lcmrfea_all, const int* sz);
 void savelcmrFEA(FILE* file, double* lcmrfea_all, const int* sz);
 
 //DATA
 void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all);
-void generateSample(FILE *test,int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size);
+void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size);
 
 //COMPUTATION
-void logmTrain(FILE *test, struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p);
-void logmTest(FILE *test, struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p);
+void logmTrain(struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p);
+void logmTest(struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p);
 void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int n_it, int size, int no_classes, const int* sz, double* kappa);
 void scale_func(double *data, int *sz, int K);
 
