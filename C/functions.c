@@ -185,6 +185,7 @@ void fun_LCMR_all(double *RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_al
 	free(RD_ex);
 }
 
+
 void scale_func(double *data, int *sz, int K){
 	int i, j=0;
 	
@@ -216,12 +217,14 @@ void scale_func(double *data, int *sz, int K){
 	free(max);
 }
 
-void swap(double* a, double* b){
-	double t = *a;
-	*a = *b;
-	*b = t;
-
+void quickSort(double *sli_id, double *arr, int low, int high){
+	if (low < high){
+		int pi = partition(sli_id, arr, low, high);
+		quickSort(sli_id, arr, low, pi - 1);
+		quickSort(sli_id, arr, pi + 1, high);
+	}
 }
+
 int partition (double *sli_id, double *arr, int low, int high){
 	double pivot = arr[high];
 	int i = (low - 1);
@@ -239,14 +242,11 @@ int partition (double *sli_id, double *arr, int low, int high){
 	return (i + 1);
 }
 
-void quickSort(double *sli_id, double *arr, int low, int high){
-	if (low < high){
-		int pi = partition(sli_id, arr, low, high);
-		quickSort(sli_id, arr, low, pi - 1);
-		quickSort(sli_id, arr, pi + 1, high);
-	}
+void swap(double* a, double* b){
+	double t = *a;
+	*a = *b;
+	*b = t;
 }
-
 void logmTrain(struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
 	int i, j, k;
 	double sum;
@@ -361,6 +361,7 @@ void shuffle(int* array, int n){
 double mean(const double* array, int length) {
 	int i;
 	double sum = 0;
+	
 	for (i = 0; i < length; i++) {
 		sum += array[i];
 	}
@@ -368,69 +369,26 @@ double mean(const double* array, int length) {
 	return sum / length;
 }
 
-void calcError(double *OA, double *class_accuracy, const int *test_label, const double *predicted_label, const int* test_id, int n_it, int size, int no_classes, const int* sz, double* kappa){
-	const double eps = 2.2204e-16;
-	int ii, i, j, k, t, len_true, len_seg, len, flag;
+void calcError(double *OA, double *class_accuracy, const int *test_label, const double *predicted_label, const int* test_id, int size, int no_classes, double* kappa){
+	int i, j;
 
 	int* nrPixelsPerClass = (int*)malloc(sizeof(int) * no_classes);
 	int* errorMatrix = (int*)malloc(sizeof(int) * no_classes*no_classes);
-	int* tmp_true = (int*)malloc(sizeof(int) * size);
-	int* tmp_seg = (int*)malloc(sizeof(int) * size);
-	int* tmp = (int*)malloc(sizeof(int) * size);
 
 	memset(nrPixelsPerClass, 0, sizeof(int) * no_classes);
 	memset(errorMatrix, 0, sizeof(int) * no_classes*no_classes);
 
-	for (ii = 0; ii < no_classes; ii++) {
-		len_true = 0;
-		for (i = 0; i < size; i++) {
-			if (test_label[i]-1 == ii) {
-				tmp_true[len_true] = i;
-				len_true++;
-			}
-		}
-		nrPixelsPerClass[ii] = len_true;
+	errorMatrixGeneration(no_classes, test_label, predicted_label, nrPixelsPerClass, errorMatrix, test_id, size);
+	
+	KappaClassAccuracy(no_classes, errorMatrix, class_accuracy, kappa, nrPixelsPerClass);
+	overallAccuracy(size, test_label, predicted_label, test_id, OA);
 
-		for (i = 0; i < no_classes; i++) {
-			len_seg = 0;
-			for (j = 0; j < size; j++) {
-				if (predicted_label[test_id[j]]-1 == i) {
-					tmp_seg[len_seg] = j;
-					len_seg++;
-				}
-			}
-			
-			len=0;
-			for (j = 0; j < len_true; j++) {
-				for (k = 0; k < len_seg; k++) {
-					if (tmp_true[j] == tmp_seg[k]) {
-						flag=0;
-						for(t=0; t<len; t++){
-							if(tmp[t]==tmp_true[j]){
-								flag=1;
-							}
-						}
-						if(flag!=1){
-							tmp[t]=tmp_true[j];
-							len++;
-						}
-					}
-				}
-			}
-			errorMatrix[ii*no_classes+i]=len;
-		}
-	}
+	free(nrPixelsPerClass);
+	free(errorMatrix);
+}
 
-	for(ii=0; ii<size; ii++){
-		if ((test_label[ii]-1) == (int)(predicted_label[test_id[ii]]-1)) {
-			OA[n_it]++;
-		}
-	}
-
-	//Overall accuracy
-	OA[n_it] /= (size+eps);
-
-	//Kappa & class accuracy
+void KappaClassAccuracy(int no_classes, int *errorMatrix, double *class_accuracy, double *kappa, int *nrPixelsPerClass){
+	int i, j;
 	int col_val, row_val, tot_sum = 0, diag_sum = 0, prod_mat = 0;
 
 	for (i = 0; i < no_classes; i++) {
@@ -443,16 +401,78 @@ void calcError(double *OA, double *class_accuracy, const int *test_label, const 
 		prod_mat += col_val * row_val;
 
 		diag_sum += errorMatrix[i * no_classes + i];
-		class_accuracy[i] = errorMatrix[i * no_classes + i] / (nrPixelsPerClass[i] + eps);
+		class_accuracy[i] = errorMatrix[i * no_classes + i] / (nrPixelsPerClass[i] + EPS);
 	}
 
 	kappa[0] = (double)((tot_sum * diag_sum) - prod_mat)/(pow(tot_sum,2) - prod_mat);
+}
+
+void overallAccuracy(int size, const int* test_label, const double *predicted_label, const int *test_id,  double *OA){
+	int i;
+	
+	for(i=0; i<size; i++){
+		if ((test_label[i]-1) == (int)(predicted_label[test_id[i]]-1)) {
+			OA[0]++;
+		}
+	}
+
+	OA[0] /= (size+EPS);
+}
+
+void errorMatrixGeneration(int no_classes, const int *test_label, const double* predicted_label, int *nrPixelsPerClass, int* errorMatrix, const int* test_id, int size){
+	int ii, i, j, len_seg, len_true;
+	int* tmp_true = (int*)malloc(sizeof(int) * size);
+	int* tmp_seg = (int*)malloc(sizeof(int) * size);
+	
+	for (ii = 0; ii < no_classes; ii++) {
+		len_true=0;
+		for (i = 0; i < size; i++) {
+			if (test_label[i]-1 == ii) {
+				tmp_true[len_true] = i;
+				len_true++;
+			}
+		}
+		nrPixelsPerClass[ii] = len_true;
+
+		for (i = 0; i < no_classes; i++) {
+			len_seg = 0;
+			
+			for (j = 0; j < size; j++) {
+				if (predicted_label[test_id[j]]-1 == i) {
+					tmp_seg[len_seg] = j;
+					len_seg++;
+				}
+			}
+			errorMatrix[ii*no_classes+i]=intersection(tmp_true, tmp_seg, len_true, len_seg, size);
+		}
+	}
 
 	free(tmp_true);
 	free(tmp_seg);
+}
+
+int intersection(int *array1, int* array2, int len1, int len2, int size){
+	int j, k, t, len=0, flag;
+	int* tmp = (int*)malloc(sizeof(int) * size);
+	
+	for (j = 0; j < len1; j++) {
+		for (k = 0; k < len2; k++) {
+			if (array1[j] == array2[k]) {
+				flag=0;
+				for(t=0; t<len; t++){
+					if(tmp[t]==array1[j]){
+						flag=1;
+					}
+				}
+				if(flag!=1){
+					tmp[t]=array1[j];
+					len++;
+				}
+			}
+		}
+	}
 	free(tmp);
-	free(nrPixelsPerClass);
-	free(errorMatrix);
+	return len;
 }
 
 void svmSetParameter(struct svm_parameter *param, int no_fea){

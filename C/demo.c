@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
 		
 		svm_free_model_content(model);
 
-		calcError(OA, class_accuracy, test_label, predict_label, test_id, i, test_size, no_classes, sz, &kappa);
+		calcError(&OA[i], class_accuracy, test_label, predict_label, test_id, test_size, no_classes, &kappa);
 
 		printf("\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy,no_classes), OA[i], kappa);
 	}
