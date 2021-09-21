@@ -36,7 +36,7 @@ void readLabels(FILE* f2, int* labels, const int* sz) {
 
 	for (i = 0; i < sz[0]; i++) {
 		for (j = 0; j < sz[1]; j++) {
-			fscanf(f2, "%d", &labels[j * sz[1] + i]);
+			fscanf(f2, "%d", &labels[j * sz[0] + i]); //read "transpose" because matlab read by columns while in the following labels are read by rows
 		}
 	}
 }

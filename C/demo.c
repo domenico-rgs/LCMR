@@ -6,8 +6,8 @@ int main(int argc, char* argv[]) {
 	int i, j, jj;
 	clock_t time;
 
-	if (argc < 5) {
-		printf("Parameter error\n"); //param.txt, MNF.txt, labels.txt, lcmrfea_all.txt
+	if (argc < 6) {
+		printf("Parameter error\n"); //param.txt, MNF.txt, labels.txt, lcmrfea_all.txt color_map
 		exit(1);
 	}
 
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 
 	readHSI(f1, RD_hsi, sz);
 	readLabels(f2, labels, sz);
-	
+
 	if (!f3) {
 		f3 = fopen(argv[4], "w");
 		fun_LCMR_all(RD_hsi, wnd_sz, K, sz, lcmrfea_all);
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	time = clock();
-	
+
 	//COMPUTATION
 	for (i = 0; i < N_IT; i++) {
 		printf("N_IT: %d\n\n", i+1);
@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
 				train_cov[j*sz[2]*sz[2]+jj] = lcmrfea_all[train_id[j]*sz[2]*sz[2] + jj];
 			}
 		}
+	
 		memcpy(test_cov, lcmrfea_all, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
 		logmTrain(prob.x, train_cov, train_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  no_classes * TRAIN_NUMBER);
@@ -99,10 +100,10 @@ int main(int argc, char* argv[]) {
 	}
 	
 	time = clock()-time;
-	
+
 	printf("\nMean overall accuracy: %lf\n", mean(OA, N_IT));
 	printf("\nElapsed computation time: %.5f seconds\n", ((double)time) / CLOCKS_PER_SEC);
-	writeBMP(predict_label, sz[0], sz[1], "map.jpg", "india");
+	writeBMP(predict_label, sz[1], sz[0], "map.jpg", argv[5]);
 	printf("Classification map image saved\n");
 
 	fclose(f0);

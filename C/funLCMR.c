@@ -201,6 +201,7 @@ double trace(double *squaredMatrix, int dim){
 	return trace;
 }
 
+//non posso usare la qSort perchè devo ordinare sia il vettore con i valori che quello con gli indici
 void quickSort(double *sli_id, double *arr, int low, int high){
 	if (low < high){
 		int pi = partition(sli_id, arr, low, high);

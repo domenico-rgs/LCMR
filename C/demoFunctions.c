@@ -1,12 +1,11 @@
 #include "demo.h"
 
-void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*train_label, int* test_id, int* test_label, int* test_size){
+void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size){
 	int ii, i, size, len=0;
 
 	double* tmp_label = (double*)malloc(sizeof(double) * no_classes*sz[0]*sz[1]);
 	int* tmp_id = (int*)malloc(sizeof(int) * no_classes*sz[0]*sz[1]);
-
-
+	
 	for (ii = 1; ii <= no_classes; ii++) {
 		for (i = 0; i < (sz[0] * sz[1]); i++) {
 			if (labels[i] == ii) {
@@ -18,7 +17,8 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 	}
 
 	int* W_class_index = (int*)malloc(sizeof(int) * test_size[0]);
-
+	int* indices = (int*)malloc(sizeof(int) * no_classes*TRAIN_NUMBER);
+	
 	for (ii = 1; ii <= no_classes; ii++) {
 		size = 0;
 
@@ -34,22 +34,33 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 		for (i = 0; i < TRAIN_NUMBER; i++) {
 			train_id[(ii-1)*TRAIN_NUMBER+i] = tmp_id[W_class_index[i]];
 			train_label[(ii-1)*TRAIN_NUMBER+i] = tmp_label[W_class_index[i]];
-			tmp_label[W_class_index[i]]=HUGE_VAL;
+			indices[(ii-1)*TRAIN_NUMBER+i]=W_class_index[i];
 		}
 	}
 	
-	for(ii=0; ii<test_size[0]; ii++){
-		if(tmp_label[ii] != HUGE_VAL){
+	int flag=0;
+	
+	for(ii=0; ii<test_size[0]; ii++){ //rimuove dai dati di test i dati da usare per il train
+		for(i=0; i<no_classes*TRAIN_NUMBER; i++){
+			if(ii==indices[i]){
+				flag=1;
+			}
+		}
+		
+		if(flag!=1){
 			test_id[len]=tmp_id[ii];
 			test_label[len]=tmp_label[ii];
 			len++;
 		}
+		flag=0;
 	}
+	
 	test_size[0]=len;
 
 	free(tmp_id);
 	free(tmp_label);
 	free(W_class_index);
+	free(indices);
 }
 
 void logmTrain(struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
@@ -57,6 +68,9 @@ void logmTrain(struct svm_node **nod, const double* array1, const double* array2
 	double sum;
 
 	for (i = 0; i < m; i++) {
+		nod[i][0].index=0;
+		nod[i][0].value=i+1;
+		
 		for (j = 0; j < p; j++) {
 			sum=0;
 			for (k = 0; k < n; k++) {
@@ -64,14 +78,11 @@ void logmTrain(struct svm_node **nod, const double* array1, const double* array2
 			}
 			
 			nod[i][j+1].index=j+1;	
-			nod[i][j+1].value = sum;					
+			nod[i][j+1].value = sum;
 		}
-		
-		nod[i][0].index=0;
-		nod[i][0].value=i+1;
-		
+					
 		nod[i][m+1].index=-1;
-		nod[i][m+1].value=0;
+		nod[i][m+1].value=0;			
 	}
 }
 
@@ -81,6 +92,9 @@ void logmTest(struct svm_node **nod, const double* array1, const double* array2,
 
 	for (i = 0; i < m; i++) {
 		for (j = 0; j < p; j++) {
+			nod[j][0].index=0;
+			nod[j][0].value=j+1;
+			
 			sum=0;
 			for (k = 0; k < n; k++) {
 				sum += array1[i * n + k] * array2[j * n + k];
@@ -89,9 +103,6 @@ void logmTest(struct svm_node **nod, const double* array1, const double* array2,
 			nod[j][i+1].index=i+1;	
 			nod[j][i+1].value = sum;
 			
-			nod[j][0].index=0;
-			nod[j][0].value=j+1;
-		
 			nod[j][m+1].index=-1;
 			nod[j][m+1].value=0;
 		}
@@ -248,7 +259,7 @@ void svmSetParameter(struct svm_parameter *param, int no_fea){
 
 void svmSetProblem(struct svm_problem *prob, double *labels, int no_labels){
 	int i;
-	
+
 	prob->l = no_labels;
 	prob->y= labels;
 	
