@@ -161,7 +161,7 @@ void errorMatrixGeneration(int no_classes, const int *test_label, const double* 
 
 void KappaClassAccuracy(int no_classes, int *errorMatrix, double *class_accuracy, double *kappa, int *nrPixelsPerClass){
 	int i, j;
-	int col_val, row_val, tot_sum = 0, diag_sum = 0, prod_mat = 0;
+	double col_val, row_val, tot_sum = 0, diag_sum = 0, prod_mat = 0;
 
 	for (i = 0; i < no_classes; i++) {
 		col_val = 0; row_val = 0;
@@ -176,7 +176,8 @@ void KappaClassAccuracy(int no_classes, int *errorMatrix, double *class_accuracy
 		class_accuracy[i] = errorMatrix[i * no_classes + i] / (nrPixelsPerClass[i] + EPS);
 	}
 
-	kappa[0] = (double)((tot_sum * diag_sum) - prod_mat)/(pow(tot_sum,2) - prod_mat);
+	kappa[0] = ((tot_sum * diag_sum) - prod_mat)/(pow(tot_sum,2) - prod_mat);
+	printf("%lf %lf %lf\n",tot_sum, diag_sum, prod_mat);
 }
 
 void overallAccuracy(int size, const int* test_label, const double *predicted_label, const int *test_id,  double *OA){
