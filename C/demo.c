@@ -7,14 +7,14 @@ int main(int argc, char* argv[]) {
 	clock_t time;
 
 	if (argc < 6) {
-		printf("Parameter error\n"); //param.txt, MNF.txt, labels.txt, lcmrfea_all.txt color_map
+		printf("Parameter error\n"); //param.txt, MNF.txt, labels.txt, color_map lcmrfea_all.txt
 		exit(1);
 	}
 
 	FILE* f0 = fopen(argv[1], "r");
 	FILE* f1 = fopen(argv[2], "r");
 	FILE* f2 = fopen(argv[3], "r");
-	FILE* f3 = fopen(argv[4], "r+");
+	FILE* f3 = fopen(argv[5], "r+");
 	FILE* test = fopen("test.txt", "w");
 	
 	fscanf(f0, "%d", &no_classes);
@@ -32,15 +32,13 @@ int main(int argc, char* argv[]) {
 	readLabels(f2, labels, sz);
 
 	if (!f3) {
-		f3 = fopen(argv[4], "w");
+		f3 = fopen(argv[5], "w");
 		fun_LCMR_all(test, RD_hsi, wnd_sz, K, sz, lcmrfea_all);
 		savelcmrFEA(f3,lcmrfea_all, sz);
 	}else {
 		readlcmrFEA(f3, lcmrfea_all, sz);
 	}
 
-	//fclose(test);
-	//return 0;
 	int* train_id = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
 	double* train_label = (double*)malloc(sizeof(double) * no_classes * TRAIN_NUMBER);
 	int* test_id = (int*)malloc(sizeof(int) * (no_classes*sz[0]*sz[1]-no_classes * TRAIN_NUMBER));
@@ -105,7 +103,7 @@ int main(int argc, char* argv[]) {
 
 	printf("\nMean overall accuracy: %lf\n", mean(OA, N_IT));
 	printf("\nElapsed computation time: %.5f seconds\n", ((double)time) / CLOCKS_PER_SEC);
-	writeBMP(predict_label, sz[1], sz[0], "map.jpg", argv[5]);
+	writeBMP(predict_label, sz[1], sz[0], "map.jpg", argv[4]);
 	printf("Classification map image saved\n");
 
 	fclose(f0);

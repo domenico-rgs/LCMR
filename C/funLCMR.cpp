@@ -22,24 +22,15 @@ void fun_LCMR_all(FILE *test, double *RD_hsi, int wnd_sz, int K, int* sz, double
 		for (j = 0; j < sz[1]; j++) { //sz[1]
 
 			for (k = 0; k < sz[2]; k++) {
-				for (ii = i; ii <= i + 2*scale; ii++) {
-					for (jj = j; jj <= j + 2*scale; jj++) {
+				for (ii = i; ii <= (i + 2*scale); ii++) {
+					for (jj = j; jj <= (j + 2*scale); jj++) {
 						tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1) + (jj-j)*(2*scale + 1)+(ii-i)] = RD_ex[k* (sz[0] + (2 * scale)) * (sz[1] + (2 * scale)) + ii* (sz[0] + (2 * scale)) + jj]; //trasposta rispetto a matlab
 					}
 				}
 			}
-			
 			corCalc(test, sz, scale, tt_RD_DAT, cor, sli_id, id);
-			/*for(ii=0; ii<(2 * scale + 1) * (2 * scale + 1); ii++){
-				fprintf(test,"%.6lf\n",cor[ii]);
-			}*/
 			quickSort(sli_id, cor, 0, (2 * scale + 1) * (2 * scale + 1)-1);
-
-			/*for(ii=0; ii<(2 * scale + 1) * (2 * scale + 1); ii++){
-				printf("%.6lf\n",sli_id[ii]);
-			}*/
 		 	centeredMat(test, sz, K, scale, tmp_mat, tt_RD_DAT, sli_id, mean_mat);
-		
 			allSamplesGeneration(test, sz, K, tmp_mat, lcmrfea_all, i, j);
 		}
 	}
@@ -120,13 +111,8 @@ void centeredMat(FILE *test, int *sz, int K, int scale, double* tmp_mat, double 
 	for (k = 0; k < sz[2]; k++) {
 		for (jj = 0; jj < K; jj++) {
 			tmp_mat[k*K+jj] = tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1)+(int)sli_id[jj]];
-			//fprintf(test,"%d\n",(int)sli_id[jj]);
 		}
 	}
-	
-	/*for (k = 0; k < sz[2]; k++) {
-			fprintf(test,"%.6lf\n",tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1)+288]);
-	}*/
 	
 	scale_func(tmp_mat, sz, K);
 			
@@ -137,7 +123,7 @@ void centeredMat(FILE *test, int *sz, int K, int scale, double* tmp_mat, double 
 			mean_mat[k] += tmp_mat[k*K+jj];
 		}
 		mean_mat[k] /= K;
-		//printf("%.6lf\n",mean_mat[k]);
+
 		for (jj = 0; jj < K; jj++) {
 			tmp_mat[k*K+jj] -= mean_mat[k];
 		}
@@ -174,18 +160,18 @@ void allSamplesGeneration(FILE *test, int *sz, int K, double *tmp_mat, double* l
 
 	tmp = (subFeatures.log()).transpose();
 
-	std::copy(tmp.data(), tmp.data() + tmp.size(), &lcmrfea_all[(i*sz[1]+j)*sz[2]*sz[2]]);
+	std::copy(tmp.data(), tmp.data() + tmp.size(), &lcmrfea_all[(j*sz[1]+i)*sz[2]*sz[2]]);
 }
 
 void scale_func(double *data, int *sz, int K){
-	int i, j=0;
+	int i, j;
 	
 	double* min = (double*)malloc(sizeof(double) * K);
 	double* max = (double*)malloc(sizeof(double) * K);
 	
 	for(i=0; i<K; i++){
-		min[i]=data[j*K+i];
-		max[i]=data[j*K+i];
+		min[i]=data[i];
+		max[i]=data[i];
 		
 		for(j=0; j<sz[2]; j++){
 			if(data[j*K+i]>max[i]){
