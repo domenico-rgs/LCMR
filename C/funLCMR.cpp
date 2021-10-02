@@ -1,6 +1,9 @@
 #include "funLCMR.h"
+#include <unsupported/Eigen/MatrixFunctions>
 
-void fun_LCMR_all(double *RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
+using namespace Eigen;
+
+void fun_LCMR_all(FILE *test, double *RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
 	int scale = (int)floor(wnd_sz / 2);
 	int id = (int)ceil(wnd_sz * wnd_sz / 2);
 	int i, j, k, ii, jj;
@@ -11,30 +14,33 @@ void fun_LCMR_all(double *RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_al
 	double* sli_id = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
 	double* tmp_mat = (double*)malloc(sizeof(double) * sz[2] * K);
 	double* mean_mat = (double*)malloc(sizeof(double) * sz[2]);
-	double* subFeatures = (double*)malloc(sizeof(double) * sz[2] * sz[2]);
+	double* temp = (double*)malloc(sizeof(double) * sz[2] * sz[2]);
 
 	padArray(sz, scale, RD_ex, RD_hsi);
 
-	for (i = 0; i < sz[0]; i++) { 
-		for (j = 0; j < sz[1]; j++) { 
+	for (i = 0; i < sz[0]; i++) { //sz[0]
+		for (j = 0; j < sz[1]; j++) { //sz[1]
 
 			for (k = 0; k < sz[2]; k++) {
 				for (ii = i; ii <= i + 2*scale; ii++) {
 					for (jj = j; jj <= j + 2*scale; jj++) {
-						tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1) + (jj-j)*(2*scale + 1)+(ii-i)] = RD_ex[k* (sz[0] + (2 * scale)) * (sz[1] + (2 * scale)) + ii* (sz[0] + (2 * scale)) + jj];
+						tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1) + (jj-j)*(2*scale + 1)+(ii-i)] = RD_ex[k* (sz[0] + (2 * scale)) * (sz[1] + (2 * scale)) + ii* (sz[0] + (2 * scale)) + jj]; //trasposta rispetto a matlab
 					}
 				}
 			}
 			
-			corCalc(sz, scale, tt_RD_DAT, cor, sli_id, id);
+			corCalc(test, sz, scale, tt_RD_DAT, cor, sli_id, id);
+			/*for(ii=0; ii<(2 * scale + 1) * (2 * scale + 1); ii++){
+				fprintf(test,"%.6lf\n",cor[ii]);
+			}*/
 			quickSort(sli_id, cor, 0, (2 * scale + 1) * (2 * scale + 1)-1);
-		 	centeredMat(sz, K, scale, tmp_mat, tt_RD_DAT, sli_id, mean_mat);
+
+			/*for(ii=0; ii<(2 * scale + 1) * (2 * scale + 1); ii++){
+				printf("%.6lf\n",sli_id[ii]);
+			}*/
+		 	centeredMat(test, sz, K, scale, tmp_mat, tt_RD_DAT, sli_id, mean_mat);
 		
-			allSamplesGeneration(sz, K, tmp_mat, subFeatures);
-			
-			//LOGM TO BE ADDED
-			
-			memcpy(&lcmrfea_all[(i*sz[1]+j)*sz[2]*sz[2]+j], subFeatures, sz[2] * sz[2]*sizeof(double));
+			allSamplesGeneration(test, sz, K, tmp_mat, lcmrfea_all, i, j);
 		}
 	}
 
@@ -43,7 +49,7 @@ void fun_LCMR_all(double *RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_al
 	free(sli_id);
 	free(tmp_mat);
 	free(mean_mat);
-	free(subFeatures);
+	free(temp);
 	free(RD_ex);
 }
 
@@ -76,7 +82,7 @@ void padArray(int *sz, int scale, double *RD_ex, double *RD_hsi){
 	}
 }
 
-void corCalc(int *sz, int scale, double *tt_RD_DAT, double *cor, double *sli_id, int id){
+void corCalc(FILE *test, int *sz, int scale, double *tt_RD_DAT, double *cor, double *sli_id, int id){
 	int ii, jj, k;
 	double* norm_temp = (double*)malloc(sizeof(double) * (2 * scale + 1)* (2 * scale + 1));
 	double* norm_block_2d = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1) * sz[2]);
@@ -100,22 +106,27 @@ void corCalc(int *sz, int scale, double *tt_RD_DAT, double *cor, double *sli_id,
 	for (jj = 0; jj < (2 * scale + 1) * (2 * scale + 1); jj++) {
 		for (k = 0; k < sz[2]; k++) {
 			cor[jj] += norm_block_2d[k * (2 * scale + 1) * (2 * scale + 1)+id] * norm_block_2d[k * (2 * scale + 1) * (2 * scale + 1) + jj];
-			sli_id[jj]=jj;
 		}
+		sli_id[jj]=jj;
 	}
 	
 	free(norm_temp);
 	free(norm_block_2d);
 }
 
-void centeredMat(int *sz, int K, int scale, double* tmp_mat, double *tt_RD_DAT, double *sli_id, double *mean_mat){
-	int k, jj;
+void centeredMat(FILE *test, int *sz, int K, int scale, double* tmp_mat, double *tt_RD_DAT, double *sli_id, double *mean_mat){
+	int k, jj, ii;
 	
 	for (k = 0; k < sz[2]; k++) {
 		for (jj = 0; jj < K; jj++) {
 			tmp_mat[k*K+jj] = tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1)+(int)sli_id[jj]];
+			//fprintf(test,"%d\n",(int)sli_id[jj]);
 		}
 	}
+	
+	/*for (k = 0; k < sz[2]; k++) {
+			fprintf(test,"%.6lf\n",tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1)+288]);
+	}*/
 	
 	scale_func(tmp_mat, sz, K);
 			
@@ -126,38 +137,44 @@ void centeredMat(int *sz, int K, int scale, double* tmp_mat, double *tt_RD_DAT, 
 			mean_mat[k] += tmp_mat[k*K+jj];
 		}
 		mean_mat[k] /= K;
-				
+		//printf("%.6lf\n",mean_mat[k]);
 		for (jj = 0; jj < K; jj++) {
-			tmp_mat[k*K+jj]= tmp_mat[k*K+jj]-mean_mat[k];
+			tmp_mat[k*K+jj] -= mean_mat[k];
 		}
 	}
 }
 
-void allSamplesGeneration(int *sz, int K, double *tmp_mat, double *subFeatures){
+void allSamplesGeneration(FILE *test, int *sz, int K, double *tmp_mat, double* lcmrfea_all, int i, int j){
+  	using std::sqrt;
 	const double tol = 1e-3;
 	int ii, jj, k;
 	
-	memset(subFeatures, 0, sizeof(double) * sz[2] * sz[2]);
+	MatrixXd subFeatures(sz[2],sz[2]);
+	MatrixXd tmp(sz[2],sz[2]);
+	subFeatures.setZero();
 						
 	for (ii = 0; ii < sz[2]; ii++) {
 		for (jj = 0; jj < sz[2]; jj++) {
 			for (k = 0; k < K; k++) {
-				subFeatures[ii * sz[2] + jj] += tmp_mat[ii * K + k] * tmp_mat[jj * K + k];
+				subFeatures(ii, jj) += tmp_mat[ii * K + k] * tmp_mat[jj * K + k];
 			}
-			subFeatures[ii * sz[2] + jj] /= (K-1);
+			subFeatures(ii,jj) /= (K-1);
 		}
 	}
 
-	double matTrace = trace(subFeatures, sz[2]);
+	double matTrace = subFeatures.trace();
 		
 	for(k=0; k<sz[2]; k++){
 		for (jj = 0; jj < sz[2]; jj++) {
 			if(k==jj){
-				subFeatures[k*sz[2]+jj] += tol*matTrace;
+				subFeatures(k,jj) += tol*matTrace;
 			}
 		}
 	}
 
+	tmp = (subFeatures.log()).transpose();
+
+	std::copy(tmp.data(), tmp.data() + tmp.size(), &lcmrfea_all[(i*sz[1]+j)*sz[2]*sz[2]]);
 }
 
 void scale_func(double *data, int *sz, int K){
@@ -189,16 +206,6 @@ void scale_func(double *data, int *sz, int K){
 	
 	free(min);
 	free(max);
-}
-
-double trace(double *squaredMatrix, int dim){
-	int k;
-	double trace = 0;
-			
-	for(k=0; k<dim; k++){
-		trace += squaredMatrix[k*dim+k];
-	}
-	return trace;
 }
 
 //non posso usare la qSort perchè devo ordinare sia il vettore con i valori che quello con gli indici

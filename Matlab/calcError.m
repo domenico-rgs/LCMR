@@ -33,5 +33,4 @@ diagVector = diag(errorMatrix);
 class_accuracy = (diagVector./(nrPixelsPerClass+eps));
 average_accuracy = mean(class_accuracy);
 overall_accuracy = sum(segLabelling == trueLabelling)/(length(trueLabelling)+eps);
-kappa_accuracy = (sum(errorMatrix(:))*sum(diag(errorMatrix)) - sum(errorMatrix)*sum(errorMatrix,2))...
-    /(sum(errorMatrix(:))^2 -  sum(errorMatrix)*sum(errorMatrix,2));
+kappa_accuracy = (sum(errorMatrix(:))*sum(diag(errorMatrix)) - sum(errorMatrix)*sum(errorMatrix,2))/(sum(errorMatrix(:))^2 -  sum(errorMatrix)*sum(errorMatrix,2));

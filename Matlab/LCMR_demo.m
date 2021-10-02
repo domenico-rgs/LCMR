@@ -7,11 +7,11 @@
 clc
 close all
 clear;clc;
-%load('Indian_pines_corrected.mat')
-%[RD_hsi]  = fun_MyMNF(indian_pines_corrected, 20); % MNF code written by author.
-load('ind_MNF_20.mat') % MNF by ENVI software
-[RD_hsi] = ind_MNF_20;
- load('Indian_pines_gt.mat')
+load('../data/Indian_pines_corrected.mat')
+[RD_hsi]  = fun_MyMNF(indian_pines_corrected, 20); % MNF code written by author.
+%load('ind_MNF_20.mat') % MNF by ENVI software
+%[RD_hsi] = ind_MNF_20;
+ load('../data/Indian_pines_gt.mat')
 labels = indian_pines_gt;
 sz = size(RD_hsi);
 no_classes = 16;

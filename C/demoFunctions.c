@@ -177,7 +177,6 @@ void KappaClassAccuracy(int no_classes, int *errorMatrix, double *class_accuracy
 	}
 
 	kappa[0] = ((tot_sum * diag_sum) - prod_mat)/(pow(tot_sum,2) - prod_mat);
-	printf("%lf %lf %lf\n",tot_sum, diag_sum, prod_mat);
 }
 
 void overallAccuracy(int size, const int* test_label, const double *predicted_label, const int *test_id,  double *OA){
