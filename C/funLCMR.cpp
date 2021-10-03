@@ -3,7 +3,7 @@
 
 using namespace Eigen;
 
-void fun_LCMR_all(FILE *test, double *RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
+void fun_LCMR_all(double *RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
 	int scale = (int)floor(wnd_sz / 2);
 	int id = (int)ceil(wnd_sz * wnd_sz / 2);
 	int i, j, k, ii, jj;
@@ -28,10 +28,10 @@ void fun_LCMR_all(FILE *test, double *RD_hsi, int wnd_sz, int K, int* sz, double
 					}
 				}
 			}
-			corCalc(test, sz, scale, tt_RD_DAT, cor, sli_id, id);
+			corCalc(sz, scale, tt_RD_DAT, cor, sli_id, id);
 			quickSort(sli_id, cor, 0, (2 * scale + 1) * (2 * scale + 1)-1);
-		 	centeredMat(test, sz, K, scale, tmp_mat, tt_RD_DAT, sli_id, mean_mat);
-			allSamplesGeneration(test, sz, K, tmp_mat, lcmrfea_all, i, j);
+		 	centeredMat(sz, K, scale, tmp_mat, tt_RD_DAT, sli_id, mean_mat);
+			allSamplesGeneration(sz, K, tmp_mat, lcmrfea_all, i, j);
 		}
 	}
 
@@ -73,7 +73,7 @@ void padArray(int *sz, int scale, double *RD_ex, double *RD_hsi){
 	}
 }
 
-void corCalc(FILE *test, int *sz, int scale, double *tt_RD_DAT, double *cor, double *sli_id, int id){
+void corCalc(int *sz, int scale, double *tt_RD_DAT, double *cor, double *sli_id, int id){
 	int ii, jj, k;
 	double* norm_temp = (double*)malloc(sizeof(double) * (2 * scale + 1)* (2 * scale + 1));
 	double* norm_block_2d = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1) * sz[2]);
@@ -105,7 +105,7 @@ void corCalc(FILE *test, int *sz, int scale, double *tt_RD_DAT, double *cor, dou
 	free(norm_block_2d);
 }
 
-void centeredMat(FILE *test, int *sz, int K, int scale, double* tmp_mat, double *tt_RD_DAT, double *sli_id, double *mean_mat){
+void centeredMat(int *sz, int K, int scale, double* tmp_mat, double *tt_RD_DAT, double *sli_id, double *mean_mat){
 	int k, jj, ii;
 	
 	for (k = 0; k < sz[2]; k++) {
@@ -130,7 +130,7 @@ void centeredMat(FILE *test, int *sz, int K, int scale, double* tmp_mat, double 
 	}
 }
 
-void allSamplesGeneration(FILE *test, int *sz, int K, double *tmp_mat, double* lcmrfea_all, int i, int j){
+void allSamplesGeneration(int *sz, int K, double *tmp_mat, double* lcmrfea_all, int i, int j){
   	using std::sqrt;
 	const double tol = 1e-3;
 	int ii, jj, k;

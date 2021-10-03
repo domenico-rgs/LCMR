@@ -5,10 +5,10 @@
 #include <math.h>
 #include <string.h>
 
-void fun_LCMR_all(FILE *test, double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all);
-void corCalc(FILE *test, int *sz, int scale, double *tt_RD_DAT, double *cor, double *sli_id, int id);
-void centeredMat(FILE *test, int *sz, int K, int scale, double* tmp_mat, double *tt_RD_DAT, double *sli_id, double *mean_mat);
-void allSamplesGeneration(FILE *test, int *sz, int K, double *tmp_mat, double* lcmrfea_all, int i, int j);
+void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all);
+void corCalc(int *sz, int scale, double *tt_RD_DAT, double *cor, double *sli_id, int id);
+void centeredMat(int *sz, int K, int scale, double* tmp_mat, double *tt_RD_DAT, double *sli_id, double *mean_mat);
+void allSamplesGeneration(int *sz, int K, double *tmp_mat, double* lcmrfea_all, int i, int j);
 
 //EXTRA FUNCTIONS
 void padArray(int *sz, int scale, double *RD_ex, double *RD_hsi);

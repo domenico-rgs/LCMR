@@ -23,9 +23,9 @@ void readlcmrFEA(FILE* f3, double* lcmrfea_all, const int* sz) {
 void savelcmrFEA(FILE* file, double* lcmrfea_all, const int* sz) {
 	int i, j;
 	
-	for (i = 0; i < sz[0] * sz[1]; i++) {
-		for (j = 0; j < sz[2]*sz[2]; j++) {
-			fprintf(file, "%lf ", lcmrfea_all[i * sz[2]*sz[2] + j]);
+	for (i = 0; i < sz[0] * sz[1] * sz[2]; i++) {
+		for (j = 0; j < sz[2]; j++) {
+			fprintf(file, "%.14lf ", lcmrfea_all[i * sz[2] + j]); //.14 per maggiore precisione
 		}
 		fprintf(file, "\n");
 	}
