@@ -4,12 +4,12 @@
 
 int main(int argc, char* argv[]) {
 	//INITIALIZATION
-	int no_classes, wnd_sz, K, sz[3];
+	int no_classes, wnd_sz, K, sz[4], d;
 	int i, j, jj;
 	clock_t time;
 
 	if (argc < 6) {
-		printf("Parameter error\n"); //param.txt, MNF.txt, labels.txt, color_map lcmrfea_all.txt
+		printf("Parameter error\n"); //param.txt, HSI.txt, labels.txt, color_map lcmrfea_all.txt
 		exit(1);
 	}
 
@@ -22,20 +22,21 @@ int main(int argc, char* argv[]) {
 	fscanf(f0, "%d", &no_classes);
 	fscanf(f0, "%d", &wnd_sz);
 	fscanf(f0, "%d", &K);
-	for(i=0; i<3; i++){
+	for(i=0; i<4; i++){
 		fscanf(f0, "%d", &sz[i]);
 	}
 
 	double* RD_hsi = (double*)malloc(sizeof(double) * sz[0] * sz[1] * sz[2]);
-	int *img = (int*)malloc(sizeof(int)*sz[0]*sz[1]*200); //change 200
+	double *img = (double*)malloc(sizeof(double)*sz[0]*sz[1]*sz[3]);
 	int* labels = (int*)malloc(sizeof(int) * sz[0] * sz[1]);
 	double* lcmrfea_all = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
 	//readHSI(f1, RD_hsi, sz);
-	readHSI(test,f1, img, sz);
+	readHSI(f1, img, sz);
 
-	fun_myMNF(test, img, RD_hsi, 20, sz);
+	fun_myMNF(test, img, RD_hsi, sz);
 	free(img);
+
 	fclose(test);
 	return 0;
 
