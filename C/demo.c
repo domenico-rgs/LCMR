@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 	FILE* f1 = fopen(argv[2], "r");
 	FILE* f2 = fopen(argv[3], "r");
 	FILE* f3 = fopen(argv[5], "r+");
-	//FILE* test = fopen("test.txt", "w");
+	FILE* test = fopen("test.txt", "w");
 	
 	fscanf(f0, "%d", &no_classes);
 	fscanf(f0, "%d", &wnd_sz);
@@ -27,10 +27,18 @@ int main(int argc, char* argv[]) {
 	}
 
 	double* RD_hsi = (double*)malloc(sizeof(double) * sz[0] * sz[1] * sz[2]);
+	int *img = (int*)malloc(sizeof(int)*sz[0]*sz[1]*200); //change 200
 	int* labels = (int*)malloc(sizeof(int) * sz[0] * sz[1]);
 	double* lcmrfea_all = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
-	readHSI(f1, RD_hsi, sz);
+	//readHSI(f1, RD_hsi, sz);
+	readHSI(test,f1, img, sz);
+
+	fun_myMNF(test, img, RD_hsi, 20, sz);
+	free(img);
+	fclose(test);
+	return 0;
+
 	readLabels(f2, labels, sz);
 
 	if (!f3) {
