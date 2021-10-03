@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 	FILE* f1 = fopen(argv[2], "r");
 	FILE* f2 = fopen(argv[3], "r");
 	FILE* f3 = fopen(argv[5], "r+");
-	FILE* test = fopen("test.txt", "w");
+	//FILE* test = fopen("test.txt", "w");
 	
 	fscanf(f0, "%d", &no_classes);
 	fscanf(f0, "%d", &wnd_sz);
@@ -34,11 +34,11 @@ int main(int argc, char* argv[]) {
 	//readHSI(f1, RD_hsi, sz);
 	readHSI(f1, img, sz);
 
-	fun_myMNF(test, img, RD_hsi, sz);
+	fun_myMNF(img, RD_hsi, sz);
 	free(img);
 
-	fclose(test);
-	return 0;
+	//fclose(test);
+	//return 0;
 
 	readLabels(f2, labels, sz);
 

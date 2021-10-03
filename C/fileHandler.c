@@ -13,7 +13,7 @@
 void readHSI(FILE* f1, double* img, const int *sz) {
 	int i, j;
 
-	for (i = 0; i < 200; i++) {
+	for (i = 0; i < sz[3]; i++) {
 		for (j = 0; j < sz[0]*sz[1]; j++) {
 			fscanf(f1, "%lf", &img[i*sz[0]*sz[1]+j]);
 		}
