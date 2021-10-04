@@ -1,20 +1,10 @@
 #include "fileHandler.h"
 
-/*void readHSI(FILE* f1, double* RD_HSI, const int *sz) {
-	int i, j;
-
-	for (i = 0; i < sz[2]; i++) {
-		for (j = 0; j < sz[0]*sz[1]; j++) {
-			fscanf(f1, "%lf", &RD_HSI[i*sz[0]*sz[1]+j]);
-		}
-	}
-}*/
-
 void readHSI(FILE* f1, double* img, const int *sz) {
 	int i, j;
 
 	for (i = 0; i < sz[3]; i++) {
-		for (j = 0; j < sz[0]*sz[1]; j++) {
+		for (j = 0; j < sz[0] * sz[1]; j++) {
 			fscanf(f1, "%lf", &img[i*sz[0]*sz[1]+j]);
 		}
 	}
@@ -35,7 +25,7 @@ void savelcmrFEA(FILE* file, double* lcmrfea_all, const int* sz) {
 	
 	for (i = 0; i < sz[0] * sz[1] * sz[2]; i++) {
 		for (j = 0; j < sz[2]; j++) {
-			fprintf(file, "%.14lf ", lcmrfea_all[i * sz[2] + j]); //.14 per maggiore precisione
+			fprintf(file, "%.14lf ", lcmrfea_all[i * sz[2] + j]);
 		}
 		fprintf(file, "\n");
 	}

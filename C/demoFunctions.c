@@ -3,8 +3,8 @@
 void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size){
 	int ii, i, size, len=0;
 
-	double* tmp_label = (double*)malloc(sizeof(double) * no_classes*sz[0]*sz[1]);
-	int* tmp_id = (int*)malloc(sizeof(int) * no_classes*sz[0]*sz[1]);
+	double* tmp_label = (double*)malloc(sizeof(double) * no_classes * sz[0] * sz[1]);
+	int* tmp_id = (int*)malloc(sizeof(int) * no_classes * sz[0] * sz[1]);
 	
 	for (ii = 1; ii <= no_classes; ii++) {
 		for (i = 0; i < (sz[0] * sz[1]); i++) {
@@ -17,7 +17,7 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 	}
 
 	int* W_class_index = (int*)malloc(sizeof(int) * test_size[0]);
-	int* indices = (int*)malloc(sizeof(int) * no_classes*TRAIN_NUMBER);
+	int* indices = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
 	
 	for (ii = 1; ii <= no_classes; ii++) {
 		size = 0;
@@ -32,16 +32,16 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 		shuffle(W_class_index, size);
 
 		for (i = 0; i < TRAIN_NUMBER; i++) {
-			train_id[(ii-1)*TRAIN_NUMBER+i] = tmp_id[W_class_index[i]];
-			train_label[(ii-1)*TRAIN_NUMBER+i] = tmp_label[W_class_index[i]];
-			indices[(ii-1)*TRAIN_NUMBER+i]=W_class_index[i];
+			train_id[(ii-1) * TRAIN_NUMBER + i] = tmp_id[W_class_index[i]];
+			train_label[(ii-1) * TRAIN_NUMBER + i] = tmp_label[W_class_index[i]];
+			indices[(ii-1) * TRAIN_NUMBER + i]=W_class_index[i];
 		}
 	}
 	
 	int flag=0;
 	
 	for(ii=0; ii<test_size[0]; ii++){ //rimuove dai dati di test i dati da usare per il train
-		for(i=0; i<no_classes*TRAIN_NUMBER; i++){
+		for(i=0; i<no_classes * TRAIN_NUMBER; i++){
 			if(ii==indices[i]){
 				flag=1;
 			}
@@ -63,7 +63,7 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 	free(indices);
 }
 
-void logmTrain(struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
+void logmTrain(struct svm_node** nod, const double* array1, const double* array2, int m, int n, int p) {
 	int i, j, k;
 	double sum;
 
@@ -86,7 +86,7 @@ void logmTrain(struct svm_node **nod, const double* array1, const double* array2
 	}
 }
 
-void logmTest(struct svm_node **nod, const double* array1, const double* array2, int m, int n, int p) {
+void logmTest(struct svm_node** nod, const double* array1, const double* array2, int m, int n, int p) {
 	int i, j, k;
 	double sum;
 
@@ -109,14 +109,14 @@ void logmTest(struct svm_node **nod, const double* array1, const double* array2,
 	}
 }
 
-void calcError(double *OA, double *class_accuracy, const int *test_label, const double *predicted_label, const int* test_id, int size, int no_classes, double* kappa){
+void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int size, int no_classes, double* kappa){
 	int i, j;
 
 	int* nrPixelsPerClass = (int*)malloc(sizeof(int) * no_classes);
-	int* errorMatrix = (int*)malloc(sizeof(int) * no_classes*no_classes);
+	int* errorMatrix = (int*)malloc(sizeof(int) * no_classes * no_classes);
 
 	memset(nrPixelsPerClass, 0, sizeof(int) * no_classes);
-	memset(errorMatrix, 0, sizeof(int) * no_classes*no_classes);
+	memset(errorMatrix, 0, sizeof(int) * no_classes * no_classes);
 
 	errorMatrixGeneration(no_classes, test_label, predicted_label, nrPixelsPerClass, errorMatrix, test_id, size);
 	
@@ -127,7 +127,7 @@ void calcError(double *OA, double *class_accuracy, const int *test_label, const 
 	free(errorMatrix);
 }
 
-void errorMatrixGeneration(int no_classes, const int *test_label, const double* predicted_label, int *nrPixelsPerClass, int* errorMatrix, const int* test_id, int size){
+void errorMatrixGeneration(int no_classes, const int* test_label, const double* predicted_label, int* nrPixelsPerClass, int* errorMatrix, const int* test_id, int size){
 	int ii, i, j, len_seg, len_true;
 	int* tmp_true = (int*)malloc(sizeof(int) * size);
 	int* tmp_seg = (int*)malloc(sizeof(int) * size);
@@ -151,7 +151,7 @@ void errorMatrixGeneration(int no_classes, const int *test_label, const double* 
 					len_seg++;
 				}
 			}
-			errorMatrix[ii*no_classes+i]=intersection(tmp_true, tmp_seg, len_true, len_seg, size);
+			errorMatrix[ii * no_classes + i]=intersection(tmp_true, tmp_seg, len_true, len_seg, size);
 		}
 	}
 
@@ -159,7 +159,7 @@ void errorMatrixGeneration(int no_classes, const int *test_label, const double* 
 	free(tmp_seg);
 }
 
-void KappaClassAccuracy(int no_classes, int *errorMatrix, double *class_accuracy, double *kappa, int *nrPixelsPerClass){
+void KappaClassAccuracy(int no_classes, int* errorMatrix, double* class_accuracy, double* kappa, int* nrPixelsPerClass){
 	int i, j;
 	double col_val, row_val, tot_sum = 0, diag_sum = 0, prod_mat = 0;
 
@@ -179,7 +179,7 @@ void KappaClassAccuracy(int no_classes, int *errorMatrix, double *class_accuracy
 	kappa[0] = ((tot_sum * diag_sum) - prod_mat)/(pow(tot_sum,2) - prod_mat);
 }
 
-void overallAccuracy(int size, const int* test_label, const double *predicted_label, const int *test_id,  double *OA){
+void overallAccuracy(int size, const int* test_label, const double* predicted_label, const int* test_id,  double* OA){
 	int i;
 	
 	for(i=0; i<size; i++){
@@ -215,7 +215,7 @@ double mean(const double* array, int length) {
 	return sum / length;
 }
 
-int intersection(int *array1, int* array2, int len1, int len2, int size){
+int intersection(int* array1, int* array2, int len1, int len2, int size){
 	int j, k, t, len=0, flag;
 	int* tmp = (int*)malloc(sizeof(int) * size);
 	
@@ -239,7 +239,7 @@ int intersection(int *array1, int* array2, int len1, int len2, int size){
 	return len;
 }
 
-void svmSetParameter(struct svm_parameter *param, int no_fea){
+void svmSetParameter(struct svm_parameter* param, int no_fea){
 	param->svm_type = C_SVC;
 	param->kernel_type = PRECOMPUTED;
 	param->degree = 3;
@@ -257,15 +257,15 @@ void svmSetParameter(struct svm_parameter *param, int no_fea){
 	param->weight_label = NULL;
 }
 
-void svmSetProblem(struct svm_problem *prob, double *labels, int no_labels){
+void svmSetProblem(struct svm_problem* prob, double* labels, int no_labels){
 	int i;
 
 	prob->l = no_labels;
 	prob->y= labels;
 	
-	prob->x = (struct svm_node**)malloc((no_labels)* sizeof(struct svm_node*));
+	prob->x = (struct svm_node**)malloc((no_labels) * sizeof(struct svm_node*));
 	for(i=0; i<no_labels; i++){
-		prob->x[i]=(struct svm_node*)malloc((sizeof(struct svm_node)*(no_labels+2)));
+		prob->x[i]=(struct svm_node*)malloc((sizeof(struct svm_node) * (no_labels+2)));
 	}
 }
 
