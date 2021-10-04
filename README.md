@@ -1,6 +1,8 @@
 # LCMR
 Porting an algorithm from MATLAB to C for feature extraction from hyperspectral images using local covariance matrix representation with consequent parallelization using CUDA/OpenMP.
 
+__Hyperspectral Remote Sensing Scenes (sample datasets)__: http://www.ehu.eus/ccwintco/index.php/Hyperspectral_Remote_Sensing_Scenes
+
 ### Used libraries
 
 * [LibSVM 3.25](https://www.csie.ntu.edu.tw/~cjlin/libsvm/)
