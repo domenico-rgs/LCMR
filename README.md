@@ -3,12 +3,37 @@ Porting an algorithm from MATLAB to C for feature extraction from hyperspectral 
 
 ### Used libraries
 
-* [LibSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/)
-* [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) (logm implementation)
+* [LibSVM 3.25](https://www.csie.ntu.edu.tw/~cjlin/libsvm/)
+* [Eigen 3.4](https://eigen.tuxfamily.org/index.php?title=Main_Page)
+
+***
+
+## Parameters and data from Matlab
+_param.txt_
+```
+n°_classes
+windows_size
+spectral_reflectance_bands
+width height excepted_output_dimensionality final_no_bands
+```
+
+_HSI_
+```Matlab
+hsi=reshape(permute(indian_pines_corrected, [1,2,3]),[],size(indian_pines_corrected,3))';
+dlmwrite('hsi.txt',hsi,'delimiter',' ');
+```
+
+_Groundtruth_
+```Matlab
+labels=reshape(permute(ind_MNF_20, [1,3,2]),[],size(ind_MNF_20,2));
+dlmwrite('labels.txt', labels,'delimiter',' ');
+```
+
+***
 
 ## Serial execution
 ```console
 cd C
-g++ -O2 -I ./eigen/ demo.c demoFunctions.c fileHandler.c funLCMR.cpp BitmapWriter.c svm.cpp -lm
-./a.out param.txt MNF.txt labels.txt india lcmrfea_all.txt
+g++ -O2 -I ./eigen/ demo.c demoFunctions.c fileHandler.c funLCMR.cpp funMyMNF.cpp BitmapWriter.c svm.cpp -lm
+./a.out param.txt hsi.txt labels.txt india lcmrfea_all.txt
 ```
