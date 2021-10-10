@@ -1,6 +1,5 @@
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues> 
-#include <iostream>
 
 using namespace Eigen;
 
@@ -58,8 +57,9 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
 
     EigenSolver<MatrixXd> eigensolver((Sigma_N.fullPivLu().inverse()) * Sigma_X);
     if (eigensolver.info() != Success) abort();
-    eig=((eigensolver.eigenvectors()).real()).transpose();
     
+    eig=((eigensolver.eigenvectors()).real()).transpose();
+
     for (i = 0; i < sz[2]; i++) {
 		for (j = 0; j < sz[0] * sz[1]; j++) {
 			for (k = 0; k < sz[3]; k++) {
@@ -73,11 +73,8 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
 		for (i = 0; i < sz[0]; i++) {
             for (j = 0; j < sz[1]; j++) {
                 RD_hsi[k * sz[0] * sz[1] + i * sz[1] + j]=RD_img_mat[k * sz[0] * sz[1] + j * sz[0] + i];
-			    //fprintf(test, "%lf ", RD_hsi[k * sz[0] * sz[1] + i * sz[1] + j]);
 		    }
-            //fprintf(test, "\n");
         }
-        //fprintf(test, "\n");
 	}
 
     free(RD_img_mat);

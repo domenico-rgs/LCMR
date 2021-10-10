@@ -3,7 +3,7 @@
 
 using namespace Eigen;
 
-void fun_LCMR_all(FILE *test, double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
+void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
 	int scale = (int)floor(wnd_sz / 2);
 	int id = (int)ceil(wnd_sz * wnd_sz / 2);
 	int i, j, k, ii, jj;
