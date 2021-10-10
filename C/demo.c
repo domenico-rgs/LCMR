@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 	FILE* f1 = fopen(argv[2], "r");
 	FILE* f2 = fopen(argv[3], "r");
 	FILE* f3 = fopen("lcmrfea_all.txt", "r+");
-	//FILE* test = fopen("test.txt", "w");
+	FILE* test = fopen("test.txt", "w");
 	
 	fscanf(f0, "%d", &no_classes);
 	fscanf(f0, "%d", &wnd_sz);
@@ -38,14 +38,11 @@ int main(int argc, char* argv[]) {
 
 	free(img);
 
-	//fclose(test);
-	//return 0;
-
 	readLabels(f2, labels, sz);
 
 	if (!f3) {
 		f3 = fopen("lcmrfea_all.txt", "w");
-		fun_LCMR_all(RD_hsi, wnd_sz, K, sz, lcmrfea_all);
+		fun_LCMR_all(test, RD_hsi, wnd_sz, K, sz, lcmrfea_all);
 		savelcmrFEA(f3,lcmrfea_all, sz);
 	}else {
 		readlcmrFEA(f3, lcmrfea_all, sz);
@@ -122,7 +119,7 @@ int main(int argc, char* argv[]) {
 	fclose(f1);
 	fclose(f2);
 	fclose(f3);
-	//fclose(test);
+	fclose(test);
 
 	free(RD_hsi);
 	free(labels);

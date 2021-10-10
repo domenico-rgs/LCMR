@@ -3,7 +3,7 @@
 
 using namespace Eigen;
 
-void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
+void fun_LCMR_all(FILE *test, double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_all) {
 	int scale = (int)floor(wnd_sz / 2);
 	int id = (int)ceil(wnd_sz * wnd_sz / 2);
 	int i, j, k, ii, jj;
@@ -24,13 +24,15 @@ void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_al
 			for (k = 0; k < sz[2]; k++) {
 				for (ii = i; ii <= (i + 2*scale); ii++) {
 					for (jj = j; jj <= (j + 2*scale); jj++) {
-						tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1) + (jj-j)*(2*scale + 1)+(ii-i)] = RD_ex[k* (sz[0] + (2 * scale)) * (sz[1] + (2 * scale)) + ii* (sz[0] + (2 * scale)) + jj]; //transposed respect to matlab
+						tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1) + (jj-j)*(2*scale + 1)+(ii-i)] = RD_ex[k* (sz[0] + (2 * scale)) * (sz[1] + (2 * scale)) + ii* (sz[1] + (2 * scale)) + jj]; //transposed respect to matlab
 					}
 				}
 			}
+
 			corCalc(sz, scale, tt_RD_DAT, cor, sli_id, id);
 			quickSort(sli_id, cor, 0, (2 * scale + 1) * (2 * scale + 1) - 1);
 		 	centeredMat(sz, K, scale, tmp_mat, tt_RD_DAT, sli_id, mean_mat);
+
 			allSamplesGeneration(sz, K, tmp_mat, lcmrfea_all, i, j);
 		}
 	}
@@ -66,7 +68,7 @@ void padArray(int* sz, int scale, double* RD_ex, double* RD_hsi){
 				if (0 == col % sz[1]) {
 					inc_col *= -1;
 				}
-				RD_ex[k * (sz[0] + (2 * scale)) * (sz[1] + (2 * scale)) + i * (sz[0] + (2 * scale)) + j] = RD_hsi[k * sz[0] * sz[1] + val_row * sz[0] + val_col];
+				RD_ex[k * (sz[0] + (2 * scale)) * (sz[1] + (2 * scale)) + i * (sz[1] + (2 * scale)) + j] = RD_hsi[k * sz[0] * sz[1] + val_row * sz[1] + val_col];
 			}
 			col = scale;
 		}
@@ -160,7 +162,7 @@ void allSamplesGeneration(int* sz, int K, double* tmp_mat, double* lcmrfea_all, 
 
 	tmp = (subFeatures.log()).transpose();
 
-	std::copy(tmp.data(), tmp.data() + tmp.size(), &lcmrfea_all[(j * sz[1] + i) * sz[2] * sz[2]]);
+	std::copy(tmp.data(), tmp.data() + tmp.size(), &lcmrfea_all[(j * sz[0] + i) * sz[2] * sz[2]]);
 }
 
 void scale_func(double *data, int *sz, int K){
