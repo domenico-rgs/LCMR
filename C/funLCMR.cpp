@@ -15,7 +15,11 @@ void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_al
 	double* tmp_mat = (double*)malloc(sizeof(double) * sz[2] * K);
 	double* mean_mat = (double*)malloc(sizeof(double) * sz[2]);
 	double* temp = (double*)malloc(sizeof(double) * sz[2] * sz[2]);
-
+	double* norm_temp = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
+	double* norm_block_2d = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1) * sz[2]);
+	double* min = (double*)malloc(sizeof(double) * K);
+	double* max = (double*)malloc(sizeof(double) * K);
+	
 	padArray(sz, scale, RD_ex, RD_hsi);
 
 	for (i = 0; i < sz[0]; i++) {
@@ -29,13 +33,14 @@ void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_al
 				}
 			}
 
-			corCalc(sz, scale, tt_RD_DAT, cor, sli_id, id);
+			corCalc(sz, scale, tt_RD_DAT, cor, sli_id, id, norm_temp, norm_block_2d);
 			quickSort(sli_id, cor, 0, (2 * scale + 1) * (2 * scale + 1) - 1);
-		 	centeredMat(sz, K, scale, tmp_mat, tt_RD_DAT, sli_id, mean_mat);
+		 	centeredMat(sz, K, scale, tmp_mat, tt_RD_DAT, sli_id, mean_mat, min, max);
 
 			allSamplesGeneration(sz, K, tmp_mat, lcmrfea_all, i, j);
 		}
 	}
+
 
 	free(tt_RD_DAT);
 	free(cor);
@@ -44,6 +49,10 @@ void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_al
 	free(mean_mat);
 	free(temp);
 	free(RD_ex);
+	free(norm_temp);
+	free(norm_block_2d);
+	free(min);
+	free(max);
 }
 
 void padArray(int* sz, int scale, double* RD_ex, double* RD_hsi){
@@ -68,17 +77,15 @@ void padArray(int* sz, int scale, double* RD_ex, double* RD_hsi){
 				if (0 == col % sz[1]) {
 					inc_col *= -1;
 				}
-				RD_ex[k * (sz[0] + (2 * scale)) * (sz[1] + (2 * scale)) + i * (sz[1] + (2 * scale)) + j] = RD_hsi[k * sz[0] * sz[1] + val_row * sz[1] + val_col];
+				RD_ex[k * (sz[0] + (2 * scale)) * (sz[1] + (2 * scale)) + i * (sz[1] + (2 * scale)) + j] = RD_hsi[k * sz[0] * sz[1] + val_col * sz[0] + val_row];
 			}
 			col = scale;
 		}
 	}
 }
 
-void corCalc(int* sz, int scale, double* tt_RD_DAT, double* cor, double* sli_id, int id){
+void corCalc(int* sz, int scale, double* tt_RD_DAT, double* cor, double* sli_id, int id, double* norm_temp, double* norm_block_2d){
 	int ii, jj, k;
-	double* norm_temp = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
-	double* norm_block_2d = (double*)malloc(sizeof(double) * (2 * scale + 1) * (2 * scale + 1) * sz[2]);
 	
 	memset(norm_temp, 0, sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
 			
@@ -102,12 +109,9 @@ void corCalc(int* sz, int scale, double* tt_RD_DAT, double* cor, double* sli_id,
 		}
 		sli_id[jj]=jj;
 	}
-	
-	free(norm_temp);
-	free(norm_block_2d);
 }
 
-void centeredMat(int* sz, int K, int scale, double* tmp_mat, double* tt_RD_DAT, double* sli_id, double* mean_mat){
+void centeredMat(int* sz, int K, int scale, double* tmp_mat, double* tt_RD_DAT, double* sli_id, double* mean_mat, double* min, double* max){
 	int k, jj, ii;
 	
 	for (k = 0; k < sz[2]; k++) {
@@ -116,7 +120,7 @@ void centeredMat(int* sz, int K, int scale, double* tmp_mat, double* tt_RD_DAT, 
 		}
 	}
 	
-	scale_func(tmp_mat, sz, K);
+	scale_func(tmp_mat, sz, K, min, max);
 			
 	memset(mean_mat, 0, sizeof(double) * sz[2]);
 
@@ -138,7 +142,6 @@ void allSamplesGeneration(int* sz, int K, double* tmp_mat, double* lcmrfea_all, 
 	int ii, jj, k;
 	
 	MatrixXd subFeatures(sz[2],sz[2]);
-	MatrixXd tmp(sz[2],sz[2]);
 	subFeatures.setZero();
 						
 	for (ii = 0; ii < sz[2]; ii++) {
@@ -160,16 +163,13 @@ void allSamplesGeneration(int* sz, int K, double* tmp_mat, double* lcmrfea_all, 
 		}
 	}
 
-	tmp = (subFeatures.log()).transpose();
+	subFeatures = (subFeatures.log()).transpose();
 
-	std::copy(tmp.data(), tmp.data() + tmp.size(), &lcmrfea_all[(j * sz[0] + i) * sz[2] * sz[2]]);
+	std::copy(subFeatures.data(), subFeatures.data() + subFeatures.size(), &lcmrfea_all[(j * sz[0] + i) * sz[2] * sz[2]]);
 }
 
-void scale_func(double *data, int *sz, int K){
+void scale_func(double *data, int *sz, int K, double* min, double* max){
 	int i, j;
-	
-	double* min = (double*)malloc(sizeof(double) * K);
-	double* max = (double*)malloc(sizeof(double) * K);
 	
 	for(i=0; i<K; i++){
 		min[i]=data[i];
@@ -191,9 +191,6 @@ void scale_func(double *data, int *sz, int K){
 			data[i * K + j] = (data[i * K + j] - min[j]) / (max[j] - min[j]);
 		}
 	}
-	
-	free(min);
-	free(max);
 }
 
 //non posso usare la qSort perchè devo ordinare sia il vettore con i valori che quello con gli indici
