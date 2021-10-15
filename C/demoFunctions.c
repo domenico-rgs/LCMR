@@ -1,10 +1,7 @@
 #include "demo.h"
 
-void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size){
+void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size, double* tmp_label, int* tmp_id, int* indices){
 	int ii, i, size, len=0;
-
-	double* tmp_label = (double*)malloc(sizeof(double) * no_classes * sz[0] * sz[1]);
-	int* tmp_id = (int*)malloc(sizeof(int) * no_classes * sz[0] * sz[1]);
 	
 	for (ii = 1; ii <= no_classes; ii++) {
 		for (i = 0; i < (sz[0] * sz[1]); i++) {
@@ -17,7 +14,6 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 	}
 
 	int* W_class_index = (int*)malloc(sizeof(int) * test_size[0]);
-	int* indices = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
 	
 	for (ii = 1; ii <= no_classes; ii++) {
 		size = 0;
@@ -57,10 +53,7 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 	
 	test_size[0]=len;
 
-	free(tmp_id);
-	free(tmp_label);
 	free(W_class_index);
-	free(indices);
 }
 
 void logmTrain(struct svm_node** nod, const double* array1, const double* array2, int m, int n, int p) {
@@ -109,11 +102,8 @@ void logmTest(struct svm_node** nod, const double* array1, const double* array2,
 	}
 }
 
-void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int size, int no_classes, double* kappa){
+void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int size, int no_classes, double* kappa, int* nrPixelsPerClass, int* errorMatrix){
 	int i, j;
-
-	int* nrPixelsPerClass = (int*)malloc(sizeof(int) * no_classes);
-	int* errorMatrix = (int*)malloc(sizeof(int) * no_classes * no_classes);
 
 	memset(nrPixelsPerClass, 0, sizeof(int) * no_classes);
 	memset(errorMatrix, 0, sizeof(int) * no_classes * no_classes);
@@ -122,9 +112,6 @@ void calcError(double* OA, double* class_accuracy, const int* test_label, const 
 	
 	KappaClassAccuracy(no_classes, errorMatrix, class_accuracy, kappa, nrPixelsPerClass);
 	overallAccuracy(size, test_label, predicted_label, test_id, OA);
-
-	free(nrPixelsPerClass);
-	free(errorMatrix);
 }
 
 void errorMatrixGeneration(int no_classes, const int* test_label, const double* predicted_label, int* nrPixelsPerClass, int* errorMatrix, const int* test_id, int size){

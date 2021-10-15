@@ -56,7 +56,13 @@ int main(int argc, char* argv[]) {
 	double* predict_label = (double*)malloc(sizeof(double) * sz[0] * sz[1]);
 	double* class_accuracy = (double*)malloc(sizeof(double) * no_classes);
 	double kappa;
-	
+
+	double* tmp_label = (double*)malloc(sizeof(double) * no_classes * sz[0] * sz[1]);
+	int* tmp_id = (int*)malloc(sizeof(int) * no_classes * sz[0] * sz[1]);
+	int* indices = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
+	int* nrPixelsPerClass = (int*)malloc(sizeof(int) * no_classes);
+	int* errorMatrix = (int*)malloc(sizeof(int) * no_classes * no_classes);
+
 	memset(OA, 0, sizeof(double) * N_IT);
 
 	//SVM
@@ -80,7 +86,7 @@ int main(int argc, char* argv[]) {
 		printf("N_IT: %d\n\n", i+1);
 		
 		int test_size = 0;
-		generateSample(labels, no_classes, sz, train_id, train_label, test_id, test_label, &test_size);
+		generateSample(labels, no_classes, sz, train_id, train_label, test_id, test_label, &test_size, tmp_label, tmp_id, indices);
 
 		for (j = 0; j < (no_classes * TRAIN_NUMBER); j++) {
 			for (jj = 0; jj < sz[2] * sz[2]; jj++) {
@@ -101,7 +107,7 @@ int main(int argc, char* argv[]) {
 		
 		svm_free_model_content(model);
 
-		calcError(&OA[i], class_accuracy, test_label, predict_label, test_id, test_size, no_classes, &kappa);
+		calcError(&OA[i], class_accuracy, test_label, predict_label, test_id, test_size, no_classes, &kappa, nrPixelsPerClass, errorMatrix);
 
 		printf("\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy,no_classes), OA[i], kappa);
 	}
@@ -118,6 +124,13 @@ int main(int argc, char* argv[]) {
 	fclose(f2);
 	fclose(f3);
 	//fclose(test);
+
+	free(tmp_id);
+	free(tmp_label);
+	free(indices);
+	
+	free(nrPixelsPerClass);
+	free(errorMatrix);
 
 	free(RD_hsi);
 	free(labels);

@@ -14,10 +14,10 @@
 #define EPS 2.2204e-16
 
 //COMPUTATION
-void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size);
+void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size, double* tmp_label, int* tmp_id, int* indices);
 void logmTrain(struct svm_node** nod, const double* array1, const double* array2, int m, int n, int p);
 void logmTest(struct svm_node** nod, const double* array1, const double* array2, int m, int n, int p);
-void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int size, int no_classes, double* kappa);
+void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int size, int no_classes, double* kappa, int* nrPixelsPerClass, int* errorMatrix);
 void errorMatrixGeneration(int no_classes, const int* test_label, const double* predicted_label, int* nrPixelsPerClass, int* errorMatrix, const int* test_id, int size);
 void KappaClassAccuracy(int no_classes, int* errorMatrix, double* class_accuracy, double* kappa, int* nrPixelsPerClass);
 void overallAccuracy(int size, const int* test_label, const double* predicted_label, const int* test_id,  double* OA);
