@@ -1,5 +1,5 @@
 #include "funLCMR.h"
-#include <unsupported/Eigen/MatrixFunctions>
+#include "../eigen-lib/unsupported/Eigen/MatrixFunctions"
 
 using namespace Eigen;
 

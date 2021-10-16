@@ -1,5 +1,5 @@
-#include <Eigen/Dense>
-#include <Eigen/Eigenvalues> 
+#include "../eigen-lib/Eigen/Dense"
+#include "../eigen-lib/Eigen/Eigenvalues"
 
 using namespace Eigen;
 
