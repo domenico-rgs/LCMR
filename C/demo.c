@@ -31,6 +31,8 @@ int main(int argc, char* argv[]) {
 	int* labels = (int*)malloc(sizeof(int) * sz[0] * sz[1]);
 	double* lcmrfea_all = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
+	memset(RD_hsi, 0, sizeof(double) * sz[0] * sz[1] * sz[2]);
+	
 	readHSI(f1, img, sz);
 	fun_myMNF(img, RD_hsi, sz);
 

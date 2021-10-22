@@ -7,16 +7,16 @@
 clc
 close all
 clear;clc;
-load('../data/Indian_pines_corrected.mat')
-[RD_hsi]  = fun_MyMNF(indian_pines_corrected, 20); % MNF code written by author.
+load('../../hsi data/Salinas_corrected.mat')
+[RD_hsi]  = fun_MyMNF(salinas_corrected, 20); % MNF code written by author.
 %load('ind_MNF_20.mat') % MNF by ENVI software
 %[RD_hsi] = ind_MNF_20;
- load('../data/Indian_pines_gt.mat')
-labels = indian_pines_gt;
+ load('../../hsi data/Salinas_gt.mat')
+labels = salinas_gt;
 sz = size(RD_hsi);
 no_classes = 16;
 wnd_sz = 25;
-K = 220;
+K = 224;
 train_number = ones(1,no_classes)*5;
 if(~exist('lcmrfea_all.mat'))
     [lcmrfea_all] =  fun_LCMR_all(RD_hsi,wnd_sz,K);
