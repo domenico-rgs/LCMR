@@ -33,6 +33,14 @@ dlmwrite('labels.txt', labels,'delimiter',' ');
 ## Serial execution
 ```console
 cd C
-g++ -O2 -I ./eigen/ demo.c demoFunctions.c fileHandler.c funLCMR.cpp funMyMNF.cpp BitmapWriter.c svm.cpp -lm
+g++ -O2 -I ../eigen-lib/ demo.c demoFunctions.c fileHandler.c funLCMR.cpp funMyMNF.cpp BitmapWriter.c svm.cpp -lm
 ./a.out param.txt hsi.txt labels.txt
+```
+
+## Parallel execution
+### Windows
+Compile the source code in LCMR Cuda through Visual Studio (release mode) and then run as follow:
+```console
+cd "\LCMR Cuda\x64\Release"
+"LCMR Cuda.exe" param.txt hsi.txt labels.txt
 ```

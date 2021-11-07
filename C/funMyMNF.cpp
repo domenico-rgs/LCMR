@@ -29,9 +29,7 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
             for(j=0; j<sz[1]; j++){
                 D_above[(k * sz[0] * sz[1]) + i * sz[1] + j] = img[(k * sz[0] * sz[1]) + j * sz[0] + i] - img[(k * sz[0] * sz[1]) + j * sz[0] + (i-1)];
             }
-
         }
-
     }
 
     for(k=0; k<sz[3]; k++){
@@ -40,7 +38,6 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
                 D_right[(k * sz[0] * sz[1]) + i * sz[1] + j] = img[(k * sz[0] * sz[1]) + j * sz[0] + i] - img[(k * sz[0] * sz[1]) + (j+1) * sz[0] + i];
             }
         }
-
     }
 
     for(k=0; k<sz[3]; k++){
@@ -61,7 +58,7 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
     for (i = 0; i < sz[2]; i++) {
 		for (j = 0; j < sz[0] * sz[1]; j++) {
 			for (k = 0; k < sz[3]; k++) {
-                 RD_hsi[i * sz[0] * sz[1] + j] += eig(i, k) * img[k * sz[0] * sz[1] + j]; //controllare segno risultati
+                RD_hsi[i * sz[0] * sz[1] + j] += eig(i, k) * img[k * sz[0] * sz[1] + j];
 			}
         }
     }
