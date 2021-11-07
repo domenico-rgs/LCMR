@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
 	//INITIALIZATION
-	int no_classes, wnd_sz, K, sz[4], d;
+	int no_classes, wnd_sz, K, sz[4];
 	int i, j, jj;
 	char color_map[20];
 	clock_t time;
@@ -17,17 +17,17 @@ int main(int argc, char* argv[]) {
 	FILE* f2 = fopen(argv[3], "r");
 	FILE* f3 = fopen("lcmrfea_all.txt", "r+");
 	//FILE* test = fopen("test.txt", "w");
-	
+
 	fscanf(f0, "%d", &no_classes);
 	fscanf(f0, "%d", &wnd_sz);
 	fscanf(f0, "%d", &K);
-	for(i=0; i<4; i++){
+	for (i = 0; i < 4; i++) {
 		fscanf(f0, "%d", &sz[i]);
 	}
 	fscanf(f0, "%s", color_map);
 
 	double* RD_hsi = (double*)malloc(sizeof(double) * sz[0] * sz[1] * sz[2]);
-	double *img = (double*)malloc(sizeof(double) * sz[0] * sz[1] * sz[3]);
+	double* img = (double*)malloc(sizeof(double) * sz[0] * sz[1] * sz[3]);
 	int* labels = (int*)malloc(sizeof(int) * sz[0] * sz[1]);
 	double* lcmrfea_all = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
@@ -41,15 +41,16 @@ int main(int argc, char* argv[]) {
 	if (!f3) {
 		f3 = fopen("lcmrfea_all.txt", "w");
 		fun_LCMR_all(RD_hsi, wnd_sz, K, sz, lcmrfea_all);
-		savelcmrFEA(f3,lcmrfea_all, sz);
-	}else {
+		savelcmrFEA(f3, lcmrfea_all, sz);
+	}
+	else {
 		readlcmrFEA(f3, lcmrfea_all, sz);
 	}
 
 	int* train_id = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
 	double* train_label = (double*)malloc(sizeof(double) * no_classes * TRAIN_NUMBER);
-	int* test_id = (int*)malloc(sizeof(int) * (no_classes * sz[0] * sz[1]-no_classes * TRAIN_NUMBER));
-	int* test_label = (int*)malloc(sizeof(int) * (no_classes * sz[0] * sz[1]-no_classes * TRAIN_NUMBER));
+	int* test_id = (int*)malloc(sizeof(int) * (no_classes * sz[0] * sz[1] - no_classes * TRAIN_NUMBER));
+	int* test_label = (int*)malloc(sizeof(int) * (no_classes * sz[0] * sz[1] - no_classes * TRAIN_NUMBER));
 	double* test_cov = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 	double* train_cov = (double*)malloc(sizeof(double) * sz[2] * sz[2] * no_classes * TRAIN_NUMBER);
 	double* OA = (double*)malloc(sizeof(double) * N_IT);
@@ -63,6 +64,9 @@ int main(int argc, char* argv[]) {
 	int* nrPixelsPerClass = (int*)malloc(sizeof(int) * no_classes);
 	int* errorMatrix = (int*)malloc(sizeof(int) * no_classes * no_classes);
 
+	double* train_value = (double*)malloc(sizeof(double) * (no_classes * TRAIN_NUMBER) * (no_classes * TRAIN_NUMBER));
+	double* test_value = (double*)malloc(sizeof(double) * (no_classes * TRAIN_NUMBER * sz[0] * sz[1]));
+
 	memset(OA, 0, sizeof(double) * N_IT);
 
 	//SVM
@@ -75,44 +79,94 @@ int main(int argc, char* argv[]) {
 	svmSetProblem(&prob, train_label, no_classes * TRAIN_NUMBER);
 
 	testnode = (struct svm_node**)malloc(sz[0] * sz[1] * sizeof(struct svm_node*));
-	for(i=0; i<sz[0] * sz[1]; i++){
+	for (i = 0; i < sz[0] * sz[1]; i++) {
 		testnode[i] = (struct svm_node*)malloc((no_classes * TRAIN_NUMBER + 2) * sizeof(struct svm_node));
 	}
+
+	//CUDA SETTINGS
+	double* d_train_cov, * d_test_cov, * d_lcmrfea_all, * d_train_value, * d_test_value;
+	int* d_train_id;
+
+	cudaMalloc((void**)&d_train_cov, sz[2] * sz[2] * no_classes * TRAIN_NUMBER * sizeof(double));
+	cudaMalloc((void**)&d_test_cov, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
+	cudaMalloc((void**)&d_lcmrfea_all, sz[2] * sz[2] * sz[0] * sz[1] * sizeof(double));
+	cudaMalloc((void**)&d_train_id, (no_classes * sz[0] * sz[1] - no_classes * TRAIN_NUMBER) * sizeof(int));
+
+	cudaMalloc((void**)&d_train_value, sizeof(double) * (no_classes * TRAIN_NUMBER) * (no_classes * TRAIN_NUMBER));
+	cudaMalloc((void**)&d_test_value, sizeof(double) * (no_classes * TRAIN_NUMBER * sz[0] * sz[1]));
+
+	cudaMemcpy(d_lcmrfea_all, lcmrfea_all, sz[2] * sz[2] * sz[0] * sz[1] * sizeof(double), cudaMemcpyHostToDevice);
+
+	dim3 dimBlock(8, 8); //64 threads
+	dim3 dimGrid((no_classes * TRAIN_NUMBER) / dimBlock.x + 1, (sz[2] * sz[2]) / dimBlock.y + 1);
+
+	dim3 dimGridTrain(((no_classes * TRAIN_NUMBER) + dimBlock.x - 1) / dimBlock.x + 1, ((no_classes * TRAIN_NUMBER) + dimBlock.y - 1) / dimBlock.y + 1);
+	dim3 dimGridTest(((no_classes * TRAIN_NUMBER) + dimBlock.x - 1) / dimBlock.x + 1, ((sz[0] * sz[1]) + dimBlock.y - 1) / dimBlock.y + 1);
+
+	//////////////
 
 	time = clock();
 
 	//COMPUTATION
 	for (i = 0; i < N_IT; i++) {
-		printf("N_IT: %d\n\n", i+1);
-		
+		printf("N_IT: %d\n\n", i + 1);
+
 		int test_size = 0;
 		generateSample(labels, no_classes, sz, train_id, train_label, test_id, test_label, &test_size, tmp_label, tmp_id, indices);
 
-		for (j = 0; j < (no_classes * TRAIN_NUMBER); j++) {
-			for (jj = 0; jj < sz[2] * sz[2]; jj++) {
-				train_cov[j * sz[2] * sz[2] + jj] = lcmrfea_all[train_id[j] * sz[2] * sz[2] + jj];
+		cudaMemcpy(d_train_id, train_id, (no_classes * TRAIN_NUMBER) * sizeof(int), cudaMemcpyHostToDevice);
+
+		loadTrainData << <dimGrid, dimBlock >> > (d_train_cov, d_lcmrfea_all, d_train_id, sz[2], no_classes);
+
+		cudaMemcpy(d_test_cov, lcmrfea_all, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1], cudaMemcpyHostToDevice);
+
+		logmKernel << <dimGridTrain, dimBlock >> > (d_train_cov, d_train_cov, d_train_value, no_classes * TRAIN_NUMBER, sz[2] * sz[2], no_classes * TRAIN_NUMBER);
+		logmKernel << <dimGridTest, dimBlock >> > (d_train_cov, d_test_cov, d_test_value, no_classes * TRAIN_NUMBER, sz[2] * sz[2], sz[0] * sz[1]);
+
+		cudaMemcpy(train_value, d_train_value, sizeof(double) * (no_classes * TRAIN_NUMBER) * (no_classes * TRAIN_NUMBER), cudaMemcpyDeviceToHost);
+		cudaMemcpy(test_value, d_test_value, sizeof(double) * (no_classes * TRAIN_NUMBER * sz[0] * sz[1]), cudaMemcpyDeviceToHost);
+
+		cudaDeviceSynchronize();
+
+		#pragma omp parallel for schedule (dynamic)
+		for (j = 0; j < no_classes * TRAIN_NUMBER; j++) {
+			prob.x[j][0].index = 0;
+			prob.x[j][0].value = j + 1;
+
+			prob.x[j][(no_classes * TRAIN_NUMBER) + 1].index = -1;
+			prob.x[j][(no_classes * TRAIN_NUMBER) + 1].value = 0;
+
+			for (jj = 0; jj < no_classes * TRAIN_NUMBER; jj++) {
+				prob.x[j][jj + 1].index = jj + 1;
+				prob.x[j][jj + 1].value = train_value[j * no_classes * TRAIN_NUMBER + jj];
+			}
+
+			for (jj = 0; jj < sz[0] * sz[1]; jj++) {
+				testnode[jj][0].index = 0;
+				testnode[jj][0].value = jj + 1;
+
+				testnode[jj][j + 1].index = j + 1;
+				testnode[jj][j + 1].value = test_value[j * sz[0] * sz[1] + jj];
+
+				testnode[jj][(no_classes * TRAIN_NUMBER) + 1].index = -1;
+				testnode[jj][(no_classes * TRAIN_NUMBER) + 1].value = 0;
 			}
 		}
-	
-		memcpy(test_cov, lcmrfea_all, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
-		logmTrain(prob.x, train_cov, train_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  no_classes * TRAIN_NUMBER);
-		logmTest(testnode, train_cov, test_cov, no_classes * TRAIN_NUMBER, sz[2] * sz[2],  sz[0] * sz[1]); 
-		
-		model = svm_train(&prob,&param);
-				
-		for(j=0; j<sz[0] * sz[1]; j++){
-			predict_label[j]=svm_predict(model, testnode[j]);
+		model = svm_train(&prob, &param);
+
+		for (j = 0; j < sz[0] * sz[1]; j++) {
+			predict_label[j] = svm_predict(model, testnode[j]);
 		}
-		
+
 		svm_free_model_content(model);
 
 		calcError(&OA[i], class_accuracy, test_label, predict_label, test_id, test_size, no_classes, &kappa, nrPixelsPerClass, errorMatrix);
 
-		printf("\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy,no_classes), OA[i], kappa);
+		printf("\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy, no_classes), OA[i], kappa);
 	}
-	
-	time = clock()-time;
+
+	time = clock() - time;
 
 	printf("\nMean overall accuracy: %lf\n", mean(OA, N_IT));
 	printf("\nElapsed computation time: %.5f seconds\n", ((double)time) / CLOCKS_PER_SEC);
@@ -125,10 +179,17 @@ int main(int argc, char* argv[]) {
 	fclose(f3);
 	//fclose(test);
 
+	cudaFree(d_train_cov);
+	cudaFree(d_test_cov);
+	cudaFree(d_lcmrfea_all);
+	cudaFree(d_train_value);
+	cudaFree(d_test_value);
+	cudaFree(d_train_id);
+
 	free(tmp_id);
 	free(tmp_label);
 	free(indices);
-	
+
 	free(nrPixelsPerClass);
 	free(errorMatrix);
 
@@ -144,19 +205,22 @@ int main(int argc, char* argv[]) {
 	free(OA);
 	free(predict_label);
 	free(class_accuracy);
-	
-	for(i=0;i < no_classes * TRAIN_NUMBER; i++){
+
+	free(train_value);
+	free(test_value);
+
+	for (i = 0; i < no_classes * TRAIN_NUMBER; i++) {
 		free(prob.x[i]);
 	}
 	free(prob.x);
-	
-	for(i=0; i<sz[0] * sz[1]; i++){
+
+	for (i = 0; i < sz[0] * sz[1]; i++) {
 		free(testnode[i]);
 	}
 	free(testnode);
-	
+
 	svm_free_and_destroy_model(&model);
 	svm_destroy_param(&param);
-	
+
 	return 0;
 }

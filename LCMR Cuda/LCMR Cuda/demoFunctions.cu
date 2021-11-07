@@ -1,8 +1,8 @@
 #include "demo.cuh"
 
-void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size, double* tmp_label, int* tmp_id, int* indices){
-	int ii, i, size, len=0;
-	
+void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size, double* tmp_label, int* tmp_id, int* indices) {
+	int ii, i, size, len = 0;
+
 	for (ii = 1; ii <= no_classes; ii++) {
 		for (i = 0; i < (sz[0] * sz[1]); i++) {
 			if (labels[i] == ii) {
@@ -14,7 +14,7 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 	}
 
 	int* W_class_index = (int*)malloc(sizeof(int) * test_size[0]);
-	
+
 	for (ii = 1; ii <= no_classes; ii++) {
 		size = 0;
 
@@ -28,101 +28,77 @@ void generateSample(int* labels, int no_classes, int* sz, int* train_id, double*
 		shuffle(W_class_index, size);
 
 		for (i = 0; i < TRAIN_NUMBER; i++) {
-			train_id[(ii-1) * TRAIN_NUMBER + i] = tmp_id[W_class_index[i]];
-			train_label[(ii-1) * TRAIN_NUMBER + i] = tmp_label[W_class_index[i]];
-			indices[(ii-1) * TRAIN_NUMBER + i]=W_class_index[i];
+			train_id[(ii - 1) * TRAIN_NUMBER + i] = tmp_id[W_class_index[i]];
+			train_label[(ii - 1) * TRAIN_NUMBER + i] = tmp_label[W_class_index[i]];
+			indices[(ii - 1) * TRAIN_NUMBER + i] = W_class_index[i];
 		}
 	}
-	
-	int flag=0;
-	
-	for(ii=0; ii<test_size[0]; ii++){ //rimuove dai dati di test i dati da usare per il train
-		for(i=0; i<no_classes * TRAIN_NUMBER; i++){
-			if(ii==indices[i]){
-				flag=1;
+
+	int flag = 0;
+
+	for (ii = 0; ii < test_size[0]; ii++) { //rimuove dai dati di test i dati da usare per il train
+		for (i = 0; i < no_classes * TRAIN_NUMBER; i++) {
+			if (ii == indices[i]) {
+				flag = 1;
 			}
 		}
-		
-		if(flag!=1){
-			test_id[len]=tmp_id[ii];
-			test_label[len]=tmp_label[ii];
+
+		if (flag != 1) {
+			test_id[len] = tmp_id[ii];
+			test_label[len] = tmp_label[ii];
 			len++;
 		}
-		flag=0;
+		flag = 0;
 	}
-	
-	test_size[0]=len;
+
+	test_size[0] = len;
 
 	free(W_class_index);
 }
 
-void logmTrain(struct svm_node** nod, const double* array1, const double* array2, int m, int n, int p) {
-	int i, j, k;
-	double sum;
+__global__ void loadTrainData(double* d_train_cov, double* d_lcmrfea_all, int* d_train_id, int sz2, int no_classes) {
+	int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+	int j = (blockIdx.y * blockDim.y) + threadIdx.y;
 
-	for (i = 0; i < m; i++) {
-		nod[i][0].index=0;
-		nod[i][0].value=i+1;
-		
-		for (j = 0; j < p; j++) {
-			sum=0;
-			for (k = 0; k < n; k++) {
-				sum += array1[i * n + k] * array2[j * n + k];
-			}
-			
-			nod[i][j+1].index=j+1;	
-			nod[i][j+1].value = sum;
-		}
-					
-		nod[i][m+1].index=-1;
-		nod[i][m+1].value=0;			
+	if ((i < no_classes * TRAIN_NUMBER) && (j < sz2 * sz2)) {
+		d_train_cov[i * sz2 * sz2 + j] = d_lcmrfea_all[d_train_id[i] * sz2 * sz2 + j];
 	}
 }
 
-void logmTest(struct svm_node** nod, const double* array1, const double* array2, int m, int n, int p) {
-	int i, j, k;
-	double sum;
+__global__ void logmKernel(double* d_m1, double* d_m2, double* d_m3, int m, int n, int p) {
+	int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+	int j = (blockIdx.y * blockDim.y) + threadIdx.y;
 
-	for (i = 0; i < m; i++) {
-		for (j = 0; j < p; j++) {
-			nod[j][0].index=0;
-			nod[j][0].value=j+1;
-			
-			sum=0;
-			for (k = 0; k < n; k++) {
-				sum += array1[i * n + k] * array2[j * n + k];
-			}
-			
-			nod[j][i+1].index=i+1;	
-			nod[j][i+1].value = sum;
-			
-			nod[j][m+1].index=-1;
-			nod[j][m+1].value=0;
+	double sum = 0;
+	int k;
+
+	if ((i < m) && (j < p)) {
+		for (k = 0; k < n; k++) {
+			sum += d_m1[i * n + k] * d_m2[j * n + k];
 		}
+		d_m3[i * p + j] = sum;
 	}
 }
 
-void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int size, int no_classes, double* kappa, int* nrPixelsPerClass, int* errorMatrix){
-	int i, j;
-
+void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int size, int no_classes, double* kappa, int* nrPixelsPerClass, int* errorMatrix) {
 	memset(nrPixelsPerClass, 0, sizeof(int) * no_classes);
 	memset(errorMatrix, 0, sizeof(int) * no_classes * no_classes);
 
 	errorMatrixGeneration(no_classes, test_label, predicted_label, nrPixelsPerClass, errorMatrix, test_id, size);
-	
+
 	KappaClassAccuracy(no_classes, errorMatrix, class_accuracy, kappa, nrPixelsPerClass);
 	overallAccuracy(size, test_label, predicted_label, test_id, OA);
 }
 
-void errorMatrixGeneration(int no_classes, const int* test_label, const double* predicted_label, int* nrPixelsPerClass, int* errorMatrix, const int* test_id, int size){
+void errorMatrixGeneration(int no_classes, const int* test_label, const double* predicted_label, int* nrPixelsPerClass, int* errorMatrix, const int* test_id, int size) {
 	int ii, i, j, len_seg, len_true;
 	int* tmp_true = (int*)malloc(sizeof(int) * size);
 	int* tmp_seg = (int*)malloc(sizeof(int) * size);
-	
+
 	for (ii = 0; ii < no_classes; ii++) {
-		len_true=0;
+		len_true = 0;
 		for (i = 0; i < size; i++) {
-			if (test_label[i]-1 == ii) {
+			if (test_label[i] - 1 == ii) {
 				tmp_true[len_true] = i;
 				len_true++;
 			}
@@ -131,14 +107,14 @@ void errorMatrixGeneration(int no_classes, const int* test_label, const double* 
 
 		for (i = 0; i < no_classes; i++) {
 			len_seg = 0;
-			
+
 			for (j = 0; j < size; j++) {
-				if (predicted_label[test_id[j]]-1 == i) {
+				if (predicted_label[test_id[j]] - 1 == i) {
 					tmp_seg[len_seg] = j;
 					len_seg++;
 				}
 			}
-			errorMatrix[ii * no_classes + i]=intersection(tmp_true, tmp_seg, len_true, len_seg, size);
+			errorMatrix[ii * no_classes + i] = intersection(tmp_true, tmp_seg, len_true, len_seg, size);
 		}
 	}
 
@@ -146,7 +122,7 @@ void errorMatrixGeneration(int no_classes, const int* test_label, const double* 
 	free(tmp_seg);
 }
 
-void KappaClassAccuracy(int no_classes, int* errorMatrix, double* class_accuracy, double* kappa, int* nrPixelsPerClass){
+void KappaClassAccuracy(int no_classes, int* errorMatrix, double* class_accuracy, double* kappa, int* nrPixelsPerClass) {
 	int i, j;
 	double col_val, row_val, tot_sum = 0, diag_sum = 0, prod_mat = 0;
 
@@ -163,26 +139,26 @@ void KappaClassAccuracy(int no_classes, int* errorMatrix, double* class_accuracy
 		class_accuracy[i] = errorMatrix[i * no_classes + i] / (nrPixelsPerClass[i] + EPS);
 	}
 
-	kappa[0] = ((tot_sum * diag_sum) - prod_mat)/(pow(tot_sum,2) - prod_mat);
+	kappa[0] = ((tot_sum * diag_sum) - prod_mat) / (pow(tot_sum, 2.0) - prod_mat);
 }
 
-void overallAccuracy(int size, const int* test_label, const double* predicted_label, const int* test_id,  double* OA){
+void overallAccuracy(int size, const int* test_label, const double* predicted_label, const int* test_id, double* OA) {
 	int i;
-	
-	for(i=0; i<size; i++){
-		if ((test_label[i]-1) == (int)(predicted_label[test_id[i]]-1)) {
+
+	for (i = 0; i < size; i++) {
+		if ((test_label[i] - 1) == (int)(predicted_label[test_id[i]] - 1)) {
 			OA[0]++;
 		}
 	}
 
-	OA[0] /= (size+EPS);
+	OA[0] /= (size + EPS);
 }
 
-void shuffle(int* array, int n){
+void shuffle(int* array, int n) {
 	srand((unsigned)time(NULL));
-	if (n > 1){
+	if (n > 1) {
 		int i;
-		for (i = 0; i < n - 1; i++){
+		for (i = 0; i < n - 1; i++) {
 			int j = i + rand() / (RAND_MAX / (n - i) + 1);
 			int t = array[j];
 			array[j] = array[i];
@@ -194,7 +170,7 @@ void shuffle(int* array, int n){
 double mean(const double* array, int length) {
 	int i;
 	double sum = 0;
-	
+
 	for (i = 0; i < length; i++) {
 		sum += array[i];
 	}
@@ -202,21 +178,21 @@ double mean(const double* array, int length) {
 	return sum / length;
 }
 
-int intersection(int* array1, int* array2, int len1, int len2, int size){
-	int j, k, t, len=0, flag;
+int intersection(int* array1, int* array2, int len1, int len2, int size) {
+	int j, k, t, len = 0, flag;
 	int* tmp = (int*)malloc(sizeof(int) * size);
-	
+
 	for (j = 0; j < len1; j++) {
 		for (k = 0; k < len2; k++) {
 			if (array1[j] == array2[k]) {
-				flag=0;
-				for(t=0; t<len; t++){
-					if(tmp[t]==array1[j]){
-						flag=1;
+				flag = 0;
+				for (t = 0; t < len; t++) {
+					if (tmp[t] == array1[j]) {
+						flag = 1;
 					}
 				}
-				if(flag!=1){
-					tmp[t]=array1[j];
+				if (flag != 1) {
+					tmp[t] = array1[j];
 					len++;
 				}
 			}
@@ -226,33 +202,32 @@ int intersection(int* array1, int* array2, int len1, int len2, int size){
 	return len;
 }
 
-void svmSetParameter(struct svm_parameter* param, int no_fea){
+void svmSetParameter(struct svm_parameter* param, int no_fea) {
 	param->svm_type = C_SVC;
 	param->kernel_type = PRECOMPUTED;
 	param->degree = 3;
 	param->coef0 = 0;
-	param->gamma = 1/(double)(no_fea+1);
-	
+	param->gamma = 1 / (double)(no_fea + 1);
+
 	param->eps = 0.01;
 	param->C = 1;
 	param->cache_size = 100;
 	param->shrinking = 1;
 	param->probability = 0;
-	
+
 	param->nr_weight = 0;
 	param->weight = NULL;
 	param->weight_label = NULL;
 }
 
-void svmSetProblem(struct svm_problem* prob, double* labels, int no_labels){
+void svmSetProblem(struct svm_problem* prob, double* labels, int no_labels) {
 	int i;
 
 	prob->l = no_labels;
-	prob->y= labels;
-	
+	prob->y = labels;
+
 	prob->x = (struct svm_node**)malloc((no_labels) * sizeof(struct svm_node*));
-	for(i=0; i<no_labels; i++){
-		prob->x[i]=(struct svm_node*)malloc((sizeof(struct svm_node) * (no_labels+2)));
+	for (i = 0; i < no_labels; i++) {
+		prob->x[i] = (struct svm_node*)malloc((sizeof(struct svm_node) * (no_labels + 2)));
 	}
 }
-

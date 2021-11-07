@@ -1,10 +1,10 @@
 #include "BitmapWriter.cuh"
 
 //max 16 classes
-int COLOR_MAP_INDIA[16][3] = {{ 140, 67, 46 }, { 0, 0, 255 }, { 255, 100, 0 }, { 0, 255, 123 }, { 164, 75, 155 }, { 101, 174, 255 }, { 118, 254, 172 }, { 60, 91, 112 }, { 255, 255, 0 }, { 255, 255, 125 }, { 255, 0, 255 }, { 100, 0, 255 }, { 0, 172, 254 }, { 0, 255, 0 }, { 171, 175, 80 }, { 101, 193, 60 }};
-int COLOR_MAP_UNI[16][3] = {{ 192, 192, 192 }, { 0, 255, 0 }, { 0, 255, 255 }, { 0, 128, 0 }, { 255, 0, 255 }, { 165, 82, 41 }, { 128, 0, 128 }, { 255, 0, 0 }, { 255, 255, 0 }};
-int COLOR_MAP_CENTER[16][3] = {{ 0, 0, 255 }, { 0, 128, 0 }, { 0, 255, 0 }, { 255, 0, 0 }, { 142, 71, 2 }, { 192, 192, 192 }, { 0, 255, 255 }, { 246, 110, 0 }, { 255, 255, 0 }};
-int COLOR_MAP_DC[16][3] = {{ 204, 102, 102 }, { 153, 51, 0 }, { 204, 153, 0 }, { 0, 255, 0 }, { 0, 102, 0 }, { 0, 51, 255 }, { 153, 153, 153 }};
+int COLOR_MAP_INDIA[16][3] = { { 140, 67, 46 }, { 0, 0, 255 }, { 255, 100, 0 }, { 0, 255, 123 }, { 164, 75, 155 }, { 101, 174, 255 }, { 118, 254, 172 }, { 60, 91, 112 }, { 255, 255, 0 }, { 255, 255, 125 }, { 255, 0, 255 }, { 100, 0, 255 }, { 0, 172, 254 }, { 0, 255, 0 }, { 171, 175, 80 }, { 101, 193, 60 } };
+int COLOR_MAP_UNI[16][3] = { { 192, 192, 192 }, { 0, 255, 0 }, { 0, 255, 255 }, { 0, 128, 0 }, { 255, 0, 255 }, { 165, 82, 41 }, { 128, 0, 128 }, { 255, 0, 0 }, { 255, 255, 0 } };
+int COLOR_MAP_CENTER[16][3] = { { 0, 0, 255 }, { 0, 128, 0 }, { 0, 255, 0 }, { 255, 0, 0 }, { 142, 71, 2 }, { 192, 192, 192 }, { 0, 255, 255 }, { 246, 110, 0 }, { 255, 255, 0 } };
+int COLOR_MAP_DC[16][3] = { { 204, 102, 102 }, { 153, 51, 0 }, { 204, 153, 0 }, { 0, 255, 0 }, { 0, 102, 0 }, { 0, 51, 255 }, { 153, 153, 153 } };
 
 
 void writeBMP(double* data, int w, int h, char const* filename, char const* type) {
@@ -17,25 +17,29 @@ void writeBMP(double* data, int w, int h, char const* filename, char const* type
 	img = (unsigned char*)malloc(3 * w * h);
 	memset(img, 0, sizeof(unsigned char) * 3 * w * h);
 
-	int (*COLOR_MAP)[3];
+	int(*COLOR_MAP)[3];
 
-	if(strcmp(type,"india")==0){
+	if (strcmp(type, "india") == 0) {
 		COLOR_MAP = COLOR_MAP_INDIA;
-	}else if(strcmp(type,"uni")==0){
+	}
+	else if (strcmp(type, "uni") == 0) {
 		COLOR_MAP = COLOR_MAP_UNI;
-	}else if(strcmp(type,"center")==0){
+	}
+	else if (strcmp(type, "center") == 0) {
 		COLOR_MAP = COLOR_MAP_CENTER;
-	}else if(strcmp(type,"dc")==0){
+	}
+	else if (strcmp(type, "dc") == 0) {
 		COLOR_MAP = COLOR_MAP_DC;
-	}else{
+	}
+	else {
 		printf("It was not possible to find a correct color map.\n");
 		exit(1);
 	}
 
-	for (j = 0; j<h; j++){
-		for (i = 0; i<w; i++){
+	for (j = 0; j < h; j++) {
+		for (i = 0; i < w; i++) {
 			x = i; y = (h - 1) - j;
-			idx = (int)data[j + i * h]-1; //adapted
+			idx = (int)data[j + i * h] - 1; //adapted
 			r = COLOR_MAP[idx][0];
 			g = COLOR_MAP[idx][1];
 			b = COLOR_MAP[idx][2];
@@ -67,8 +71,8 @@ void writeBMP(double* data, int w, int h, char const* filename, char const* type
 	fwrite(bmpfileheader, 1, 14, f);
 	fwrite(bmpinfoheader, 1, 40, f);
 
-	for (i = h - 1; i >= 0; i--){
-		fwrite(img + (w*(h - i - 1) * 3), 3, w, f);
+	for (i = h - 1; i >= 0; i--) {
+		fwrite(img + (w * (h - i - 1) * 3), 3, w, f);
 		fwrite(bmppad, 1, (4 - (w * 3) % 4) % 4, f);
 	}
 	fclose(f);
