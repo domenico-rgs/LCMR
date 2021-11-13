@@ -112,7 +112,7 @@ void corCalc(int* sz, int scale, double* tt_RD_DAT, double* cor, double* sli_id,
 }
 
 void centeredMat(int* sz, int K, int scale, double* tmp_mat, double* tt_RD_DAT, double* sli_id, double* mean_mat, double* min, double* max){
-	int k, jj, ii;
+	int k, jj;
 	
 	for (k = 0; k < sz[2]; k++) {
 		for (jj = 0; jj < K; jj++) {

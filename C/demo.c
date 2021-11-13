@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
 	//INITIALIZATION
-	int no_classes, wnd_sz, K, sz[4], d;
+	int no_classes, wnd_sz, K, sz[4];
 	int i, j, jj;
 	char color_map[20];
 	clock_t time;

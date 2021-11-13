@@ -103,8 +103,6 @@ void logmTest(struct svm_node** nod, const double* array1, const double* array2,
 }
 
 void calcError(double* OA, double* class_accuracy, const int* test_label, const double* predicted_label, const int* test_id, int size, int no_classes, double* kappa, int* nrPixelsPerClass, int* errorMatrix){
-	int i, j;
-
 	memset(nrPixelsPerClass, 0, sizeof(int) * no_classes);
 	memset(errorMatrix, 0, sizeof(int) * no_classes * no_classes);
 

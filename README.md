@@ -1,5 +1,5 @@
 # LCMR
-Porting an algorithm from MATLAB to C for feature extraction from hyperspectral images using local covariance matrix representation with consequent parallelization using CUDA/OpenMP.
+Porting an algorithm from MATLAB to C for feature extraction from hyperspectral images using local covariance matrix representation with consequent parallelization using [Cuda 10.2](https://developer.nvidia.com/cuda-10.2-download-archive) and OpenMP.
 
 __Hyperspectral Remote Sensing Scenes (sample datasets)__: http://www.ehu.eus/ccwintco/index.php/Hyperspectral_Remote_Sensing_Scenes
 
@@ -7,6 +7,7 @@ __Hyperspectral Remote Sensing Scenes (sample datasets)__: http://www.ehu.eus/cc
 
 * [LibSVM 3.25](https://www.csie.ntu.edu.tw/~cjlin/libsvm/)
 * [Eigen 3.4](https://eigen.tuxfamily.org/index.php?title=Main_Page)
+* [cuBLAS](https://docs.nvidia.com/cuda/cublas/index.html)
 
 ## Parameters and data from Matlab
 _param.txt_
@@ -39,8 +40,8 @@ g++ -O2 -I ../eigen-lib/ demo.c demoFunctions.c fileHandler.c funLCMR.cpp funMyM
 
 ## Parallel execution
 ### Windows
-Compile the source code in LCMR Cuda through Visual Studio (release mode) and then run as follow:
+Compile the source code in LCMR Parallel through Visual Studio (release mode) and then run as follow:
 ```console
-cd "\LCMR Cuda\x64\Release"
-"LCMR Cuda.exe" param.txt hsi.txt labels.txt
+cd "\LCMR Parallel\x64\Release"
+"LCMR Parallel.exe" param.txt hsi.txt labels.txt
 ```
