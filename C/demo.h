@@ -10,7 +10,7 @@
 #include "svm.h"
 
 #define TRAIN_NUMBER 5
-#define N_IT 1
+#define N_IT 10
 #define EPS 2.2204e-16
 
 //COMPUTATION

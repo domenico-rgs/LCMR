@@ -8,14 +8,14 @@ int main(int argc, char* argv[]) {
 	clock_t time;
 
 	if (argc < 4) {
-		printf("Parameter error\n"); //param.txt, HSI.txt, labels.txt
+		printf("\033[31;1m Parameter error \033[0m\n"); //param.txt, HSI.txt, labels.txt
 		exit(1);
 	}
 
 	FILE* f0 = fopen(argv[1], "r");
 	FILE* f1 = fopen(argv[2], "r");
 	FILE* f2 = fopen(argv[3], "r");
-	FILE* f3 = fopen("lcmrfea_all.txt", "r+");
+	FILE* f3 = fopen("lcmrfea_all.bin", "rb");
 	//FILE* test = fopen("test.txt", "w");
 	
 	fscanf(f0, "%d", &no_classes);
@@ -32,20 +32,19 @@ int main(int argc, char* argv[]) {
 	double* lcmrfea_all = (double*)malloc(sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1]);
 
 	memset(RD_hsi, 0, sizeof(double) * sz[0] * sz[1] * sz[2]);
-	
-	readHSI(f1, img, sz);
-	fun_myMNF(img, RD_hsi, sz);
-
-	free(img);
 
 	readLabels(f2, labels, sz);
 
 	if (!f3) {
-		f3 = fopen("lcmrfea_all.txt", "w");
+		readHSI(f1, img, sz);
+		fun_myMNF(img, RD_hsi, sz);
+
+		f3 = fopen("lcmrfea_all.bin", "wb");
 		fun_LCMR_all(RD_hsi, wnd_sz, K, sz, lcmrfea_all);
-		savelcmrFEA(f3,lcmrfea_all, sz);
+
+		fwrite(lcmrfea_all , sizeof(double), sz[2] * sz[2] * sz[0] * sz[1], f3);
 	}else {
-		readlcmrFEA(f3, lcmrfea_all, sz);
+		fread(lcmrfea_all , sizeof(double), sz[2] * sz[2] * sz[0] * sz[1], f3);
 	}
 
 	int* train_id = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
@@ -111,12 +110,12 @@ int main(int argc, char* argv[]) {
 
 		calcError(&OA[i], class_accuracy, test_label, predict_label, test_id, test_size, no_classes, &kappa, nrPixelsPerClass, errorMatrix);
 
-		printf("\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy,no_classes), OA[i], kappa);
+		printf("\033[33;1m\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\033[0m\n", mean(class_accuracy,no_classes), OA[i], kappa);
 	}
 	
 	time = clock()-time;
 
-	printf("\nMean overall accuracy: %lf\n", mean(OA, N_IT));
+	printf("\033[36;1m\nMean overall accuracy: %lf\033[0m\n", mean(OA, N_IT));
 	printf("\nElapsed computation time: %.5f seconds\n", ((double)time) / CLOCKS_PER_SEC);
 	writeBMP(predict_label, sz[1], sz[0], "map.jpg", color_map);
 	printf("Classification map image saved\n");
@@ -133,6 +132,8 @@ int main(int argc, char* argv[]) {
 	
 	free(nrPixelsPerClass);
 	free(errorMatrix);
+
+	free(img);
 
 	free(RD_hsi);
 	free(labels);
