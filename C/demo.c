@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
 	clock_t time;
 
 	if (argc < 4) {
-		printf("\033[31;1m Parameter error \033[0m\n"); //param.txt, HSI.txt, labels.txt
+		printf("Parameter error\n"); //param.txt, HSI.txt, labels.txt
 		exit(1);
 	}
 
@@ -110,12 +110,12 @@ int main(int argc, char* argv[]) {
 
 		calcError(&OA[i], class_accuracy, test_label, predict_label, test_id, test_size, no_classes, &kappa, nrPixelsPerClass, errorMatrix);
 
-		printf("\033[33;1m\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\033[0m\n", mean(class_accuracy,no_classes), OA[i], kappa);
+		printf("\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy,no_classes), OA[i], kappa);
 	}
 	
 	time = clock()-time;
 
-	printf("\033[36;1m\nMean overall accuracy: %lf\033[0m\n", mean(OA, N_IT));
+	printf("\nMean overall accuracy: %lf\n", mean(OA, N_IT));
 	printf("\nElapsed computation time: %.5f seconds\n", ((double)time) / CLOCKS_PER_SEC);
 	writeBMP(predict_label, sz[1], sz[0], "map.jpg", color_map);
 	printf("Classification map image saved\n");
