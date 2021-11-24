@@ -75,6 +75,7 @@ int main(int argc, char* argv[]) {
 
 	svmSetParameter(&param, no_classes * TRAIN_NUMBER);
 	svmSetProblem(&prob, train_label, no_classes * TRAIN_NUMBER);
+	svm_set_print_string_function([](auto c) {}); //to suppress libsvm output
 
 	testnode = (struct svm_node**)malloc(sz[0] * sz[1] * sizeof(struct svm_node*));
 	for (i = 0; i < sz[0] * sz[1]; i++) {
@@ -134,7 +135,7 @@ int main(int argc, char* argv[]) {
 
 		cudaDeviceSynchronize();
 
-		#pragma omp parallel for schedule (static)
+		#pragma omp parallel for private(jj,j) schedule(dynamic)
 		for (j = 0; j < no_classes * TRAIN_NUMBER; j++) {
 			prob.x[j][0].index = 0;
 			prob.x[j][0].value = j + 1;
@@ -148,19 +149,20 @@ int main(int argc, char* argv[]) {
 			}
 
 			for (jj = 0; jj < sz[0] * sz[1]; jj++) {
-				testnode[jj][0].index = 0;
-				testnode[jj][0].value = jj + 1;
+					testnode[jj][0].index = 0;
+					testnode[jj][0].value = jj + 1;
 
-				testnode[jj][j + 1].index = j + 1;
-				testnode[jj][j + 1].value = test_value[j * sz[0] * sz[1] + jj];
+					testnode[jj][j + 1].index = j + 1;
+					testnode[jj][j + 1].value = test_value[j * sz[0] * sz[1] + jj];
 
-				testnode[jj][(no_classes * TRAIN_NUMBER) + 1].index = -1;
-				testnode[jj][(no_classes * TRAIN_NUMBER) + 1].value = 0;
+					testnode[jj][(no_classes * TRAIN_NUMBER) + 1].index = -1;
+					testnode[jj][(no_classes * TRAIN_NUMBER) + 1].value = 0;
 			}
 		}
 
 		model = svm_train(&prob, &param);
 
+		#pragma omp parallel for private(j) schedule(dynamic)
 		for (j = 0; j < sz[0] * sz[1]; j++) {
 			predict_label[j] = svm_predict(model, testnode[j]);
 		}

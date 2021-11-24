@@ -25,6 +25,7 @@ void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_al
 	for (i = 0; i < sz[0]; i++) {
 		for (j = 0; j < sz[1]; j++) {
 
+			#pragma omp parallel for private(k,ii,jj)
 			for (k = 0; k < sz[2]; k++) {
 				for (ii = i; ii <= (i + 2*scale); ii++) {
 					for (jj = j; jj <= (j + 2*scale); jj++) {
@@ -88,13 +89,15 @@ void corCalc(int* sz, int scale, double* tt_RD_DAT, double* cor, double* sli_id,
 	int ii, jj, k;
 	
 	memset(norm_temp, 0, sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
-			
+	
+	#pragma omp parallel for private(ii,jj)
 	for (ii = 0; ii < sz[2]; ii++) {
 		for (jj = 0; jj < (2 * scale + 1) * (2 * scale + 1); jj++) {
 			norm_temp[jj] += pow(tt_RD_DAT[ii * (2 * scale + 1) * (2 * scale + 1) + jj], 2);
 		}
 	}
 
+	#pragma omp parallel for private(ii,jj)
 	for (ii = 0; ii < sz[2]; ii++) {
 		for (jj = 0; jj < (2 * scale + 1) * (2 * scale + 1); jj++) {
 			norm_block_2d[ii * (2 * scale + 1) * (2 * scale + 1) + jj] = tt_RD_DAT[ii * (2 * scale + 1) * (2 * scale + 1) + jj]/sqrt(norm_temp[jj]);
@@ -103,6 +106,7 @@ void corCalc(int* sz, int scale, double* tt_RD_DAT, double* cor, double* sli_id,
 
 	memset(cor, 0, sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
 
+	#pragma omp parallel for private(ii,k)
 	for (jj = 0; jj < (2 * scale + 1) * (2 * scale + 1); jj++) {
 		for (k = 0; k < sz[2]; k++) {
 			cor[jj] += norm_block_2d[k * (2 * scale + 1) * (2 * scale + 1)+id] * norm_block_2d[k * (2 * scale + 1) * (2 * scale + 1) + jj];
@@ -112,8 +116,9 @@ void corCalc(int* sz, int scale, double* tt_RD_DAT, double* cor, double* sli_id,
 }
 
 void centeredMat(int* sz, int K, int scale, double* tmp_mat, double* tt_RD_DAT, double* sli_id, double* mean_mat, double* min, double* max){
-	int k, jj, ii;
+	int k, jj;
 	
+	#pragma omp parallel for private(k,jj)
 	for (k = 0; k < sz[2]; k++) {
 		for (jj = 0; jj < K; jj++) {
 			tmp_mat[k * K + jj] = tt_RD_DAT[k * (2 * scale + 1) * (2 * scale + 1) + (int)sli_id[jj]];
@@ -124,6 +129,7 @@ void centeredMat(int* sz, int K, int scale, double* tmp_mat, double* tt_RD_DAT, 
 			
 	memset(mean_mat, 0, sizeof(double) * sz[2]);
 
+	#pragma omp parallel for private(k,jj)
 	for(k=0; k<sz[2]; k++){
 		for (jj = 0; jj < K; jj++) {
 			mean_mat[k] += tmp_mat[k * K + jj];
@@ -143,7 +149,8 @@ void allSamplesGeneration(int* sz, int K, double* tmp_mat, double* lcmrfea_all, 
 	
 	MatrixXd subFeatures(sz[2],sz[2]);
 	subFeatures.setZero();
-						
+	
+	#pragma omp parallel for private(ii,jj,k)
 	for (ii = 0; ii < sz[2]; ii++) {
 		for (jj = 0; jj < sz[2]; jj++) {
 			for (k = 0; k < K; k++) {
@@ -154,7 +161,8 @@ void allSamplesGeneration(int* sz, int K, double* tmp_mat, double* lcmrfea_all, 
 	}
 
 	double matTrace = subFeatures.trace();
-		
+	
+	#pragma omp parallel for private(k,jj)
 	for(k=0; k<sz[2]; k++){
 		for (jj = 0; jj < sz[2]; jj++) {
 			if(k==jj){
@@ -186,6 +194,7 @@ void scale_func(double *data, int *sz, int K, double* min, double* max){
 		}
 	}
 	
+	#pragma omp parallel for private(i,j)
 	for(i=0; i<sz[2]; i++){
 		for(j=0; j<K; j++){
 			data[i * K + j] = (data[i * K + j] - min[j]) / (max[j] - min[j]);

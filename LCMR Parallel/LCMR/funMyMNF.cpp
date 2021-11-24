@@ -24,6 +24,7 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
     cov_fun(mean_mat, sz, center, img, Sigma_X);
 
     //S.2 estimate the covariance matrix of noise (with MAF)
+    #pragma omp parallel for private(k,i,j)
     for(k=0; k<sz[3]; k++){ 
         for(i=1; i<sz[0]; i++){ 
             for(j=0; j<sz[1]; j++){
@@ -33,7 +34,8 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
         }
 
     }
-
+    
+    #pragma omp parallel for private(k,i,j)
     for(k=0; k<sz[3]; k++){
         for(i=0; i<sz[0]; i++){
             for(j=0; j<(sz[1] - 1); j++){
@@ -43,6 +45,7 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
 
     }
 
+    #pragma omp parallel for private(k,i,j)
     for(k=0; k<sz[3]; k++){
         for(i=0; i<sz[0]; i++){
             for(j=0; j<sz[1]; j++){
@@ -58,6 +61,7 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
     
     eig=((eigensolver.eigenvectors()).real()).transpose();
 
+    #pragma omp parallel for private(k,i,j)
     for (i = 0; i < sz[2]; i++) {
 		for (j = 0; j < sz[0] * sz[1]; j++) {
 			for (k = 0; k < sz[3]; k++) {
@@ -79,19 +83,22 @@ void cov_fun(double* mean_mat, int* sz, double* center, double* signal, Ref<Matr
     Sigma.setZero();
     memset(mean_mat, 0, sizeof(double) * sz[3]);
 
+    #pragma omp parallel for private(i,j)
     for (i = 0; i < sz[3]; i++) {
         for (j = 0; j < sz[0]*sz[1]; j++) {
             mean_mat[i] += signal[i * sz[0] * sz[1] + j];
         }
         mean_mat[i] /= sz[0] * sz[1];
     }
-
+    
+    #pragma omp parallel for private(i,j)
     for (i = 0; i < sz[3]; i++) {
 	    for (j = 0; j < sz[0] * sz[1]; j++) {
             center[i * sz[0] * sz[1] + j] = signal[i * sz[0] * sz[1] + j] - mean_mat[i];
         }
     }
 
+    #pragma omp parallel for private(k,i,j)
     for (i = 0; i < sz[3]; i++) {
 		for (j = 0; j < sz[3]; j++) {
 			for (k = 0; k < sz[0] * sz[1]; k++) {
