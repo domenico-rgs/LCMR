@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 	FILE* f0 = fopen(argv[1], "r");
 	FILE* f1 = fopen(argv[2], "r");
 	FILE* f2 = fopen(argv[3], "r");
-	FILE* f3 = fopen("lcmrfea_all.txt", "r+");
+	FILE* f3 = fopen("lcmrfea_all.bin", "rb");
 	//FILE* test = fopen("test.txt", "w");
 
 	fscanf(f0, "%d", &no_classes);
@@ -37,12 +37,12 @@ int main(int argc, char* argv[]) {
 		readHSI(f1, img, sz);
 		fun_myMNF(img, RD_hsi, sz);
 
-		f3 = fopen("lcmrfea_all.txt", "w");
+		f3 = fopen("lcmrfea_all.bin", "wb");
 		fun_LCMR_all(RD_hsi, wnd_sz, K, sz, lcmrfea_all);
-		savelcmrFEA(f3, lcmrfea_all, sz);
+		fwrite(lcmrfea_all, sizeof(double), sz[2] * sz[2] * sz[0] * sz[1],f3);
 	}
 	else {
-		readlcmrFEA(f3, lcmrfea_all, sz);
+		fread(lcmrfea_all, sizeof(double), sz[2] * sz[2] * sz[0] * sz[1], f3);
 	}
 
 	int* train_id = (int*)malloc(sizeof(int) * no_classes * TRAIN_NUMBER);
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 
 	//COMPUTATION
 	for (i = 0; i < N_IT; i++) {
-		printf("N_IT: %d\n\n", i + 1);
+		//printf("N_IT: %d\n\n", i + 1);
 
 		cudaMemcpyAsync(d_test_cov, lcmrfea_all, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1], cudaMemcpyHostToDevice, stream1);
 
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
 
 		calcError(&OA[i], class_accuracy, test_label, predict_label, test_id, test_size, no_classes, &kappa, nrPixelsPerClass, errorMatrix);
 
-		printf("\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy, no_classes), OA[i], kappa);
+		//printf("\n**********************\nMean class accuracy : % lf\nOverall accuracy : % lf\nKappa : % lf\n**********************\n", mean(class_accuracy, no_classes), OA[i], kappa);
 	}
 
 	time = clock() - time;

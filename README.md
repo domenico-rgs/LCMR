@@ -34,7 +34,7 @@ dlmwrite('labels.txt', labels,'delimiter',' ');
 ## Serial execution
 ```console
 cd C
-g++ -O2 -I ../eigen-lib/ demo.c demoFunctions.c fileHandler.c funLCMR.cpp funMyMNF.cpp BitmapWriter.c svm.cpp -lm
+g++ -O2 -I ../eigen-lib/ demo.cpp demoFunctions.cpp fileHandler.cpp funLCMR.cpp funMyMNF.cpp BitmapWriter.cpp svm.cpp -lm
 ./a.out param.txt hsi.txt labels.txt
 ```
 

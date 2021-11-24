@@ -13,7 +13,6 @@ void allSamplesGeneration(int* sz, int K, double* tmp_mat, double* lcmrfea_all, 
 //EXTRA FUNCTIONS
 void padArray(int* sz, int scale, double* RD_ex, double* RD_hsi);
 void scale_func(double *data, int *sz, int K, double* min, double* max);
-double trace(double* squaredMatrix, int dim);
 void quickSort(double* sli_id, double* arr, int low, int high);
 int partition (double* sli_id, double* arr, int low, int high);
 void swap(double* a, double* b);
