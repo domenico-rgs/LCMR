@@ -24,25 +24,25 @@ void fun_myMNF(double* img, double* RD_hsi, int* sz){
     cov_fun(mean_mat, sz, center, img, Sigma_X);
 
     //S.2 estimate the covariance matrix of noise (with MAF)
-    #pragma omp parallel for private(k,i,j)
-    for(k=0; k<sz[3]; k++){ 
-        for(i=1; i<sz[0]; i++){ 
-            for(j=0; j<sz[1]; j++){
-                D_above[(k * sz[0] * sz[1]) + i * sz[1] + j] = img[(k * sz[0] * sz[1]) + j * sz[0] + i] - img[(k * sz[0] * sz[1]) + j * sz[0] + (i-1)];
-            }
-
-        }
-
-    }
-    
-    #pragma omp parallel for private(k,i,j)
-    for(k=0; k<sz[3]; k++){
-        for(i=0; i<sz[0]; i++){
-            for(j=0; j<(sz[1] - 1); j++){
-                D_right[(k * sz[0] * sz[1]) + i * sz[1] + j] = img[(k * sz[0] * sz[1]) + j * sz[0] + i] - img[(k * sz[0] * sz[1]) + (j+1) * sz[0] + i];
+    #pragma omp parallel
+    {
+        #pragma omp for private(k,i,j) nowait
+        for (k = 0; k < sz[3]; k++) {
+            for (i = 1; i < sz[0]; i++) {
+                for (j = 0; j < sz[1]; j++) {
+                    D_above[(k * sz[0] * sz[1]) + i * sz[1] + j] = img[(k * sz[0] * sz[1]) + j * sz[0] + i] - img[(k * sz[0] * sz[1]) + j * sz[0] + (i - 1)];
+                }
             }
         }
 
+        #pragma omp for private(k,i,j) nowait
+        for (k = 0; k < sz[3]; k++) {
+            for (i = 0; i < sz[0]; i++) {
+                for (j = 0; j < (sz[1] - 1); j++) {
+                    D_right[(k * sz[0] * sz[1]) + i * sz[1] + j] = img[(k * sz[0] * sz[1]) + j * sz[0] + i] - img[(k * sz[0] * sz[1]) + (j + 1) * sz[0] + i];
+                }
+            }
+        }
     }
 
     #pragma omp parallel for private(k,i,j)

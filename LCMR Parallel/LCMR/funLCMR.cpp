@@ -25,7 +25,7 @@ void fun_LCMR_all(double* RD_hsi, int wnd_sz, int K, int* sz, double* lcmrfea_al
 	for (i = 0; i < sz[0]; i++) {
 		for (j = 0; j < sz[1]; j++) {
 
-			#pragma omp parallel for private(k,ii,jj)
+			#pragma omp parallel for private(k,ii,jj) collapse(2)
 			for (k = 0; k < sz[2]; k++) {
 				for (ii = i; ii <= (i + 2*scale); ii++) {
 					for (jj = j; jj <= (j + 2*scale); jj++) {
@@ -150,7 +150,7 @@ void allSamplesGeneration(int* sz, int K, double* tmp_mat, double* lcmrfea_all, 
 	MatrixXd subFeatures(sz[2],sz[2]);
 	subFeatures.setZero();
 	
-	#pragma omp parallel for private(ii,jj,k)
+	#pragma omp parallel for private(ii,jj,k) collapse(2)
 	for (ii = 0; ii < sz[2]; ii++) {
 		for (jj = 0; jj < sz[2]; jj++) {
 			for (k = 0; k < K; k++) {
@@ -195,8 +195,8 @@ void scale_func(double *data, int *sz, int K, double* min, double* max){
 	}
 	
 	#pragma omp parallel for private(i,j)
-	for(i=0; i<sz[2]; i++){
-		for(j=0; j<K; j++){
+	for (j = 0; j < K; j++) {
+		for(i=0; i<sz[2]; i++){
 			data[i * K + j] = (data[i * K + j] - min[j]) / (max[j] - min[j]);
 		}
 	}

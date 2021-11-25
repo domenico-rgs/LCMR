@@ -34,11 +34,18 @@ int main(int argc, char* argv[]) {
 	readLabels(f2, labels, sz);
 
 	if (!f3) {
-		readHSI(f1, img, sz);
-		fun_myMNF(img, RD_hsi, sz);
-
 		f3 = fopen("lcmrfea_all.bin", "wb");
+
+		readHSI(f1, img, sz);
+
+		clock_t time1 = clock();
+
+		fun_myMNF(img, RD_hsi, sz);
 		fun_LCMR_all(RD_hsi, wnd_sz, K, sz, lcmrfea_all);
+
+		time1 = clock() - time1;
+		printf("\nElapsed time in noise reduction and cov. matrix building: %.5f seconds\n", ((double)time1) / CLOCKS_PER_SEC);
+
 		fwrite(lcmrfea_all, sizeof(double), sz[2] * sz[2] * sz[0] * sz[1],f3);
 	}
 	else {
@@ -149,14 +156,14 @@ int main(int argc, char* argv[]) {
 			}
 
 			for (jj = 0; jj < sz[0] * sz[1]; jj++) {
-					testnode[jj][0].index = 0;
-					testnode[jj][0].value = jj + 1;
+				testnode[jj][0].index = 0;
+				testnode[jj][0].value = jj + 1;
 
-					testnode[jj][j + 1].index = j + 1;
-					testnode[jj][j + 1].value = test_value[j * sz[0] * sz[1] + jj];
+				testnode[jj][j + 1].index = j + 1;
+				testnode[jj][j + 1].value = test_value[j * sz[0] * sz[1] + jj];
 
-					testnode[jj][(no_classes * TRAIN_NUMBER) + 1].index = -1;
-					testnode[jj][(no_classes * TRAIN_NUMBER) + 1].value = 0;
+				testnode[jj][(no_classes * TRAIN_NUMBER) + 1].index = -1;
+				testnode[jj][(no_classes * TRAIN_NUMBER) + 1].value = 0;
 			}
 		}
 

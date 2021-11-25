@@ -36,11 +36,18 @@ int main(int argc, char* argv[]) {
 	readLabels(f2, labels, sz);
 
 	if (!f3) {
-		readHSI(f1, img, sz);
-		fun_myMNF(img, RD_hsi, sz);
-
 		f3 = fopen("lcmrfea_all.bin", "wb");
+
+		readHSI(f1, img, sz);
+
+		clock_t time1 = clock();
+
+		fun_myMNF(img, RD_hsi, sz);
 		fun_LCMR_all(RD_hsi, wnd_sz, K, sz, lcmrfea_all);
+
+		time1 = clock() - time1;
+		printf("\nElapsed time in noise reduction and cov. matrix building: %.5f seconds\n", ((double)time1) / CLOCKS_PER_SEC);
+
 
 		fwrite(lcmrfea_all , sizeof(double), sz[2] * sz[2] * sz[0] * sz[1], f3);
 	}else {
@@ -74,6 +81,7 @@ int main(int argc, char* argv[]) {
 
 	svmSetParameter(&param, no_classes * TRAIN_NUMBER);
 	svmSetProblem(&prob, train_label, no_classes * TRAIN_NUMBER);
+	svm_set_print_string_function([](auto c) {}); //to suppress libsvm output
 
 	testnode = (struct svm_node**)malloc(sz[0] * sz[1] * sizeof(struct svm_node*));
 	for(i=0; i<sz[0] * sz[1]; i++){
@@ -84,7 +92,7 @@ int main(int argc, char* argv[]) {
 
 	//COMPUTATION
 	for (i = 0; i < N_IT; i++) {
-		printf("N_IT: %d\n\n", i+1);
+		//printf("N_IT: %d\n\n", i+1);
 		
 		int test_size = 0;
 		generateSample(labels, no_classes, sz, train_id, train_label, test_id, test_label, &test_size, tmp_label, tmp_id, indices);
@@ -110,7 +118,7 @@ int main(int argc, char* argv[]) {
 
 		calcError(&OA[i], class_accuracy, test_label, predict_label, test_id, test_size, no_classes, &kappa, nrPixelsPerClass, errorMatrix);
 
-		printf("\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy,no_classes), OA[i], kappa);
+		//printf("\n**********************\nMean class accuracy: %lf\nOverall accuracy: %lf\nKappa: %lf\n**********************\n", mean(class_accuracy,no_classes), OA[i], kappa);
 	}
 	
 	time = clock()-time;
