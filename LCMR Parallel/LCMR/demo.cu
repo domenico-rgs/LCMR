@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
 	//////////////
 
 	time = clock();
-
+	//cudaProfilerStart();
 	//COMPUTATION
 	for (i = 0; i < N_IT; i++) {
 		//printf("N_IT: %d\n\n", i + 1);
@@ -178,6 +178,7 @@ int main(int argc, char* argv[]) {
 
 		//printf("\n**********************\nMean class accuracy : % lf\nOverall accuracy : % lf\nKappa : % lf\n**********************\n", mean(class_accuracy, no_classes), OA[i], kappa);
 	}
+	//cudaProfilerStop();
 
 	time = clock() - time;
 

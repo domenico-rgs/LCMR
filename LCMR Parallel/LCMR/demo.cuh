@@ -34,6 +34,9 @@ void svmSetProblem(struct svm_problem* prob, double* labels, int no_labels);
 void shuffle(int* array, int n);
 double mean(const double* array, int length);
 int intersection(int* array1, int* array2, int len1, int len2, int size);
+int getMax(int* arr, int n);
+void countSort(int* arr, int* output, int n, int exp);
+void radixsort(int* arr, int n);
 
 //CUDA
 __global__ void loadTrainData(double* d_train_cov, double* d_lcmrfea_all, int* d_train_id, int sz2, int no_classes);

@@ -1,57 +1,51 @@
 #include "demo.h"
 
 void generateSample(int* labels, int no_classes, int* sz, int* train_id, double* train_label, int* test_id, int* test_label, int* test_size, double* tmp_label, int* tmp_id, int* indices){
-	int ii, i, size, len=0;
-	
+	int ii, i, size, len = 0;
+
 	for (ii = 1; ii <= no_classes; ii++) {
 		for (i = 0; i < (sz[0] * sz[1]); i++) {
 			if (labels[i] == ii) {
-				tmp_id[test_size[0]] = i;
-				tmp_label[test_size[0]] = ii;
-				test_size[0]++;
+					tmp_id[test_size[0]++] = i;
+					tmp_label[test_size[0]] = ii;
 			}
 		}
 	}
 
 	int* W_class_index = (int*)malloc(sizeof(int) * test_size[0]);
-	
+
 	for (ii = 1; ii <= no_classes; ii++) {
 		size = 0;
 
 		for (i = 0; i < test_size[0]; i++) {
 			if (tmp_label[i] == ii) {
-				W_class_index[size] = i;
-				size++;
+				W_class_index[size++] = i;
 			}
 		}
 
 		shuffle(W_class_index, size);
 
 		for (i = 0; i < TRAIN_NUMBER; i++) {
-			train_id[(ii-1) * TRAIN_NUMBER + i] = tmp_id[W_class_index[i]];
-			train_label[(ii-1) * TRAIN_NUMBER + i] = tmp_label[W_class_index[i]];
-			indices[(ii-1) * TRAIN_NUMBER + i]=W_class_index[i];
+			train_id[(ii - 1) * TRAIN_NUMBER + i] = tmp_id[W_class_index[i]];
+			train_label[(ii - 1) * TRAIN_NUMBER + i] = tmp_label[W_class_index[i]];
+			indices[(ii - 1) * TRAIN_NUMBER + i] = W_class_index[i];
 		}
 	}
-	
-	int flag=0;
-	
-	for(ii=0; ii<test_size[0]; ii++){ //rimuove dai dati di test i dati da usare per il train
-		for(i=0; i<no_classes * TRAIN_NUMBER; i++){
-			if(ii==indices[i]){
-				flag=1;
+
+	for (ii = 0; ii < test_size[0]; ii++) { //Removes from the test data the ones to be used for the train
+		for (i = 0; i < no_classes * TRAIN_NUMBER; i++) {
+			if (ii == indices[i]) {
+				break;
 			}
 		}
-		
-		if(flag!=1){
-			test_id[len]=tmp_id[ii];
-			test_label[len]=tmp_label[ii];
-			len++;
+
+		if (i == no_classes * TRAIN_NUMBER) {
+				test_id[len++] = tmp_id[ii];
+				test_label[len] = tmp_label[ii];
 		}
-		flag=0;
 	}
-	
-	test_size[0]=len;
+
+	test_size[0] = len;
 
 	free(W_class_index);
 }
@@ -200,28 +194,73 @@ double mean(const double* array, int length) {
 	return sum / length;
 }
 
-int intersection(int* array1, int* array2, int len1, int len2, int size){
-	int j, k, t, len=0, flag;
+
+int getMax(int* arr, int n){
+	int mx = arr[0];
+	for (int i = 1; i < n; i++)
+		if (arr[i] > mx)
+			mx = arr[i];
+	return mx;
+}
+
+void countSort(int* arr, int* output, int n, int exp){
+	int i, count[10] = { 0 };
+
+	for (i = 0; i < n; i++)
+		count[(arr[i] / exp) % 10]++;
+
+	for (i = 1; i < 10; i++)
+		count[i] += count[i - 1];
+
+	for (i = n - 1; i >= 0; i--) {
+		output[count[(arr[i] / exp) % 10] - 1] = arr[i];
+		count[(arr[i] / exp) % 10]--;
+	}
+
+	for (i = 0; i < n; i++)
+		arr[i] = output[i];
+}
+
+void radixsort(int* arr, int n){
+	int m = getMax(arr, n);
+	int* output = (int*)malloc(sizeof(int) * n);
+
+	for (int exp = 1; m / exp > 0; exp *= 10) {
+		countSort(arr, output, n, exp);
+	}
+
+	free(output);
+}
+
+int intersection(int* arr1, int* arr2, int len1, int len2, int size){
+	int t, intersectC = 0;
 	int* tmp = (int*)malloc(sizeof(int) * size);
-	
-	for (j = 0; j < len1; j++) {
-		for (k = 0; k < len2; k++) {
-			if (array1[j] == array2[k]) {
-				flag=0;
-				for(t=0; t<len; t++){
-					if(tmp[t]==array1[j]){
-						flag=1;
-					}
-				}
-				if(flag!=1){
-					tmp[t]=array1[j];
-					len++;
+
+	radixsort(arr1, len1);
+	radixsort(arr2, len2);
+
+	int i = 0, j = 0;
+	while (i < len1 && j < len2) {
+		if (arr1[i] < arr2[j])
+			i++;
+		else if (arr2[j] < arr1[i])
+			j++;
+		else /* if arr1[i] == arr2[j] */
+		{
+			for (t = 0; t < intersectC; t++) {
+				if (tmp[t] == arr1[j]) {
+					break;
 				}
 			}
+			if (t == intersectC) {
+				tmp[intersectC++] = arr1[j];
+			}
+			i++;
 		}
 	}
+
 	free(tmp);
-	return len;
+	return intersectC;
 }
 
 void svmSetParameter(struct svm_parameter* param, int no_fea){
