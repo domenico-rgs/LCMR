@@ -90,7 +90,7 @@ void corCalc(int* sz, int scale, double* tt_RD_DAT, double* cor, double* sli_id,
 	
 	memset(norm_temp, 0, sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
 	
-	#pragma omp parallel for private(ii,jj)
+	//#pragma omp parallel for private(ii,jj)
 	for (ii = 0; ii < sz[2]; ii++) {
 		for (jj = 0; jj < (2 * scale + 1) * (2 * scale + 1); jj++) {
 			norm_temp[jj] += pow(tt_RD_DAT[ii * (2 * scale + 1) * (2 * scale + 1) + jj], 2);
@@ -106,7 +106,7 @@ void corCalc(int* sz, int scale, double* tt_RD_DAT, double* cor, double* sli_id,
 
 	memset(cor, 0, sizeof(double) * (2 * scale + 1) * (2 * scale + 1));
 
-	#pragma omp parallel for private(ii,k)
+	#pragma omp parallel for private(k,jj)
 	for (jj = 0; jj < (2 * scale + 1) * (2 * scale + 1); jj++) {
 		for (k = 0; k < sz[2]; k++) {
 			cor[jj] += norm_block_2d[k * (2 * scale + 1) * (2 * scale + 1)+id] * norm_block_2d[k * (2 * scale + 1) * (2 * scale + 1) + jj];

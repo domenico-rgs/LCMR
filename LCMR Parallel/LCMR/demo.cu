@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
 	//cudaProfilerStart();
 	//COMPUTATION
 	for (i = 0; i < N_IT; i++) {
-		//printf("N_IT: %d\n\n", i + 1);
+		printf("N_IT: %d\n\n", i + 1);
 
 		cudaMemcpyAsync(d_test_cov, lcmrfea_all, sizeof(double) * sz[2] * sz[2] * sz[0] * sz[1], cudaMemcpyHostToDevice, stream1);
 
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
 
 		calcError(&OA[i], class_accuracy, test_label, predict_label, test_id, test_size, no_classes, &kappa, nrPixelsPerClass, errorMatrix);
 
-		//printf("\n**********************\nMean class accuracy : % lf\nOverall accuracy : % lf\nKappa : % lf\n**********************\n", mean(class_accuracy, no_classes), OA[i], kappa);
+		printf("\n**********************\nMean class accuracy : % lf\nOverall accuracy : % lf\nKappa : % lf\n**********************\n", mean(class_accuracy, no_classes), OA[i], kappa);
 	}
 	//cudaProfilerStop();
 
